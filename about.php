@@ -1,46 +1,11 @@
 <?php
+require_once __DIR__ . '/init_session.php';
+require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/includes/auth.php';
-// ensure the session is started before any output
 init_session();
+$pageTitle = 'Jeweluxe - About';
+require_once __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jeweluxe - About</title>
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- jQuery CDN -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- Validation Script -->
-  <script src="js/validation.js"></script>
-  <link href="styles.css" rel="stylesheet">
-</head>
-<body>
-  <div class="main-content">
-
-  <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-  <a class="navbar-brand text-start" href="home.php">← Jeweluxe</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul class="navbar-nav mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="home.php">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="products.php">Products</a></li>
-          <li class="nav-item"><span class="nav-link active" style="cursor:default;">About</span></li>
-          <li class="nav-item"><a class="nav-link" href="contactus.php">Contact</a></li>
-          <li class="nav-item"><a class="nav-link" href="cart.php">🛒 Cart</a></li>
-          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal">👤 Account</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
   <!-- HERO -->
   <header class="text-center text-white py-5 bg-dark" style="background:url(Video/wallpaper.jpg) center/cover no-repeat;">
@@ -188,14 +153,4 @@ init_session();
     </section>
   </main>
 
-  <!-- FOOTER -->
-  </div>
-  <footer class="bg-light text-dark text-center py-3">
-    <p class="mb-0">© 2025 Jeweluxe | Exquisite Jewelry for You</p>
-  </footer>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+<?php include __DIR__ . '/includes/footer.php'; ?>

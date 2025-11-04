@@ -1,48 +1,11 @@
 <?php
+$pageTitle = 'Jeweluxe - Cart';
+require_once __DIR__ . '/init_session.php';
+require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/includes/auth.php';
-// ensure the session is started before any output
+require_once __DIR__ . '/includes/header.php';
 init_session();
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jeweluxe - Cart</title>
-
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- jQuery CDN -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <!-- Font Awesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <!-- Validation Script -->
-  <script src="js/validation.js"></script>
-  <!-- Custom CSS -->
-  <link href="styles.css" rel="stylesheet">
-</head>
-<body>
-  <div class="main-content">
-
-  <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-  <a class="navbar-brand text-start" href="home.php">← Jeweluxe</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul class="navbar-nav mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="home.php">Home</a></li>
-          <li class="nav-item"><a class="nav-link" href="products.php">Products</a></li>
-          <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="contactus.php">Contact Us</a></li>
-          <li class="nav-item"><span class="nav-link active" style="cursor:default;">🛒 Cart</span></li>
-          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal">👤 Account</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
   <!-- HERO -->
   <header class="text-center text-white py-5 bg-dark" style="background:url(Video/wallpaper.jpg) center/cover no-repeat;">
@@ -108,205 +71,192 @@ init_session();
     </div>
   </section>
 
-  <!-- FOOTER -->
-  </div>
-  <footer class="bg-light text-dark text-center py-3">
-    <p class="mb-0">© 2025 Jeweluxe | Exquisite Jewelry for You</p>
-  </footer>
+<script>
+$(document).ready(function() {
+  // Initialize cart (we try server-side first, then fallback to localStorage)
+  let cart = [];
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <!-- Cart Functionality -->
-  <script>
-    $(document).ready(function() {
-      // Initialize cart (we try server-side first, then fallback to localStorage)
-      let cart = [];
+  function useLocalCart() {
+    cart = JSON.parse(localStorage.getItem('jeweluxe_cart')) || [];
+    displayCart();
+  }
 
-      function useLocalCart() {
-        cart = JSON.parse(localStorage.getItem('jeweluxe_cart')) || [];
-        displayCart();
-      }
-
-      // Try fetching server-side cart (works when user is logged in). If that fails or returns empty, fall back to localStorage.
-      $.get('get_cart.php')
-        .done(function(resp) {
-          try {
-            // get_cart.php returns { success: true, cart: { items: [...] } }
-            const items = resp && resp.cart && Array.isArray(resp.cart.items) ? resp.cart.items : [];
-            if (resp && resp.success && items.length > 0) {
-              // Map server items into the local shape used by the UI, preserving cart_item id
-              cart = items.map(function(it) {
-                return {
-                  item_id: it.item_id ? parseInt(it.item_id) : (it.itemId ? parseInt(it.itemId) : null),
-                  product_id: it.product_id || it.productId || null,
-                  name: it.name || it.product_name || it.productName || '',
-                  price: parseFloat(it.price) || parseFloat(it.product_price) || 0,
-                  image: it.image || it.product_image || 'image/placeholder.png',
-                  quantity: parseInt(it.quantity || it.qty || 1) || 1,
-                  sku: it.sku || ''
-                };
-              });
-              // Keep a localStorage mirror for offline UX
-              localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-              displayCart();
-            } else {
-              useLocalCart();
-            }
-          } catch (e) {
-            console.error('Error parsing server cart response', e, resp);
-            useLocalCart();
-          }
-        })
-        .fail(function() {
-          // server-side not available or user not logged in — use localStorage
-          useLocalCart();
-        });
-
-      // Display cart items
-      function displayCart() {
-        if (cart.length === 0) {
-          $('#emptyCart').show();
-          $('#cartItems').hide();
+  // Try fetching server-side cart (works when user is logged in). If that fails or returns empty, fall back to localStorage.
+  $.get('get_cart.php')
+    .done(function(resp) {
+      try {
+        // get_cart.php returns { success: true, cart: { items: [...] } }
+        const items = resp && resp.cart && Array.isArray(resp.cart.items) ? resp.cart.items : [];
+        if (resp && resp.success && items.length > 0) {
+          // Map server items into the local shape used by the UI, preserving cart_item id
+          cart = items.map(function(it) {
+            return {
+              item_id: it.item_id ? parseInt(it.item_id) : (it.itemId ? parseInt(it.itemId) : null),
+              product_id: it.product_id || it.productId || null,
+              name: it.name || it.product_name || it.productName || '',
+              price: parseFloat(it.price) || parseFloat(it.product_price) || 0,
+              image: it.image || it.product_image || 'image/placeholder.png',
+              quantity: parseInt(it.quantity || it.qty || 1) || 1,
+              sku: it.sku || ''
+            };
+          });
+          // Keep a localStorage mirror for offline UX
+          localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+          displayCart();
         } else {
-          $('#emptyCart').hide();
-          $('#cartItems').show();
-          updateCartDisplay();
+          useLocalCart();
         }
+      } catch (e) {
+        console.error('Error parsing server cart response', e, resp);
+        useLocalCart();
       }
-      
-      // Update cart display
-      function updateCartDisplay() {
-        let cartHtml = '';
-        let subtotal = 0;
-        
-        cart.forEach(function(item, index) {
-          subtotal += (item.price || 0) * (item.quantity || 1);
-          cartHtml += `
-            <div class="card mb-3">
-              <div class="card-body">
-                <div class="row align-items-center">
-                  <div class="col-md-2">
-                    <img src="${item.image}" alt="${item.name}" class="img-fluid rounded" style="height: 80px; object-fit: cover;">
-                  </div>
-                  <div class="col-md-4">
-                    <h6 class="mb-1">${item.name}</h6>
-                    <small class="text-muted">SKU: ${item.sku || 'N/A'}</small>
-                  </div>
-                  <div class="col-md-2">
-                    <span class="fw-bold">₱${item.price.toFixed(2)}</span>
-                  </div>
-                  <div class="col-md-2">
-                    <div class="input-group">
-                      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, -1)">-</button>
-                      <input type="number" class="form-control form-control-sm text-center" value="${item.quantity || 1}" min="1" max="10" onchange="updateQuantity(${index}, 0, this.value)">
-                      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, 1)">+</button>
-                    </div>
-                  </div>
-                  <div class="col-md-2 text-end">
-                    <span class="fw-bold">₱${((item.quantity || 1) * item.price).toFixed(2)}</span>
-                    <br>
-                    <button class="btn btn-outline-danger btn-sm mt-1" onclick="removeFromCart(${index})">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
+    })
+    .fail(function() {
+      // server-side not available or user not logged in — use localStorage
+      useLocalCart();
+    });
+
+  // Display cart items
+  function displayCart() {
+    if (cart.length === 0) {
+      $('#emptyCart').show();
+      $('#cartItems').hide();
+    } else {
+      $('#emptyCart').hide();
+      $('#cartItems').show();
+      updateCartDisplay();
+    }
+  }
+  
+  // Update cart display
+  function updateCartDisplay() {
+    let cartHtml = '';
+    let subtotal = 0;
+    
+    cart.forEach(function(item, index) {
+      subtotal += (item.price || 0) * (item.quantity || 1);
+      cartHtml += `
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-2">
+                <img src="${item.image}" alt="${item.name}" class="img-fluid rounded" style="height: 80px; object-fit: cover;">
+              </div>
+              <div class="col-md-4">
+                <h6 class="mb-1">${item.name}</h6>
+                <small class="text-muted">SKU: ${item.sku || 'N/A'}</small>
+              </div>
+              <div class="col-md-2">
+                <span class="fw-bold">₱${item.price.toFixed(2)}</span>
+              </div>
+              <div class="col-md-2">
+                <div class="input-group">
+                  <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, -1)">-</button>
+                  <input type="number" class="form-control form-control-sm text-center" value="${item.quantity || 1}" min="1" max="10" onchange="updateQuantity(${index}, 0, this.value)">
+                  <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, 1)">+</button>
                 </div>
               </div>
+              <div class="col-md-2 text-end">
+                <span class="fw-bold">₱${((item.quantity || 1) * item.price).toFixed(2)}</span>
+                <br>
+                <button class="btn btn-outline-danger btn-sm mt-1" onclick="removeFromCart(${index})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
             </div>
-          `;
-        });
-        
-        $('.cart-item-list').html(cartHtml);
-        
-        // Update totals
-        $('#cartSubtotal').text('₱' + subtotal.toFixed(2));
-        const shipping = subtotal > 0 ? 150.00 : 0;
-        $('#cartShipping').text('₱' + shipping.toFixed(2));
-        $('#cartTotal').text('₱' + (subtotal + shipping).toFixed(2));
-      }
-      
-      // Update quantity
-      window.updateQuantity = function(index, change, newValue) {
-        if (newValue !== undefined) {
-          cart[index].quantity = parseInt(newValue);
-        } else {
-          cart[index].quantity = (cart[index].quantity || 1) + change;
-        }
-        
-        if (cart[index].quantity < 1) {
-          cart[index].quantity = 1;
-        }
+          </div>
+        </div>
+      `;
+    });
+    
+    $('.cart-item-list').html(cartHtml);
+    
+    // Update totals
+    $('#cartSubtotal').text('₱' + subtotal.toFixed(2));
+    const shipping = subtotal > 0 ? 150.00 : 0;
+    $('#cartShipping').text('₱' + shipping.toFixed(2));
+    $('#cartTotal').text('₱' + (subtotal + shipping).toFixed(2));
+  }
+  
+  // Update quantity
+  window.updateQuantity = function(index, change, newValue) {
+    if (newValue !== undefined) {
+      cart[index].quantity = parseInt(newValue);
+    } else {
+      cart[index].quantity = (cart[index].quantity || 1) + change;
+    }
+    
+    if (cart[index].quantity < 1) {
+      cart[index].quantity = 1;
+    }
 
-        // If this item exists on server (has item_id), update server as well
-        const item = cart[index];
-        if (item && item.item_id) {
-          $.post('update_cart.php', { item_id: item.item_id, quantity: item.quantity })
-            .done(function(resp) {
-              if (resp && resp.success) {
-                // reflect any canonical quantity from server
-                item.quantity = resp.quantity || item.quantity;
-                localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-                updateCartDisplay();
-              } else {
-                console.error('Failed to update cart on server', resp);
-                // fallback: still update locally
-                localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-                updateCartDisplay();
-              }
-            })
-            .fail(function(xhr, status, err) {
-              console.error('update_cart.php request failed', status, err, xhr.responseText);
-              // fallback to local update
-              localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-              updateCartDisplay();
-            });
-        } else {
-          // local-only item
+    // If this item exists on server (has item_id), update server as well
+    const item = cart[index];
+    if (item && item.item_id) {
+      $.post('update_cart.php', { item_id: item.item_id, quantity: item.quantity })
+        .done(function(resp) {
+          if (resp && resp.success) {
+            // reflect any canonical quantity from server
+            item.quantity = resp.quantity || item.quantity;
+            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+            updateCartDisplay();
+          } else {
+            console.error('Failed to update cart on server', resp);
+            // fallback: still update locally
+            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+            updateCartDisplay();
+          }
+        })
+        .fail(function(xhr, status, err) {
+          console.error('update_cart.php request failed', status, err, xhr.responseText);
+          // fallback to local update
           localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
           updateCartDisplay();
-        }
-      };
-      
-      // Remove from cart
-      window.removeFromCart = function(index) {
-        const item = cart[index];
-        if (item && item.item_id) {
-          // ask server to remove
-          $.post('remove_from_cart.php', { item_id: item.item_id })
-            .done(function(resp) {
-              if (resp && resp.success) {
-                cart.splice(index, 1);
-                localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-                displayCart();
-              } else {
-                console.error('Server failed to remove item', resp);
-                // still remove locally to keep UX responsive
-                cart.splice(index, 1);
-                localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-                displayCart();
-              }
-            })
-            .fail(function(xhr, status, err) {
-              console.error('remove_from_cart.php request failed', status, err, xhr.responseText);
-              // fallback: remove locally
-              cart.splice(index, 1);
-              localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-              displayCart();
-            });
-        } else {
-          // local-only item
+        });
+    } else {
+      // local-only item
+      localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+      updateCartDisplay();
+    }
+  };
+  
+  // Remove from cart
+  window.removeFromCart = function(index) {
+    const item = cart[index];
+    if (item && item.item_id) {
+      // ask server to remove
+      $.post('remove_from_cart.php', { item_id: item.item_id })
+        .done(function(resp) {
+          if (resp && resp.success) {
+            cart.splice(index, 1);
+            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+            displayCart();
+          } else {
+            console.error('Server failed to remove item', resp);
+            // still remove locally to keep UX responsive
+            cart.splice(index, 1);
+            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+            displayCart();
+          }
+        })
+        .fail(function(xhr, status, err) {
+          console.error('remove_from_cart.php request failed', status, err, xhr.responseText);
+          // fallback: remove locally
           cart.splice(index, 1);
           localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
           displayCart();
-        }
-      };
-      
-      // Initialize display
+        });
+    } else {
+      // local-only item
+      cart.splice(index, 1);
+      localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
       displayCart();
-    });
-  </script>
+    }
+  };
+  
+  // Initialize display
+  displayCart();
+});
+</script>
 
-</body>
-</html>
+<?php include __DIR__ . '/includes/footer.php'; ?>

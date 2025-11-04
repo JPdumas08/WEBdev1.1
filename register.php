@@ -1,5 +1,5 @@
 <?php
-
+require_once __DIR__ . '/init_session.php';
 require_once 'db.php'; 
 require_once __DIR__ . '/includes/auth.php';
 
@@ -95,40 +95,39 @@ if (empty($errors)) {
 }
 
 ?>
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registration Result</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  </head>
-  <body class="bg-light">
-    <div class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-body text-center">
-              <?php if (empty($errors)): ?>
-                <h4 class="text-success">Account created</h4>
-                <p class="mb-3">Your account has been created. Please sign in.</p>
-                <a href="login.php" class="btn btn-primary">Sign in</a>
-              <?php else: ?>
-                <h4 class="text-danger">Registration failed</h4>
-                <div class="text-start small text-muted mb-3">
-                  <strong>Errors:</strong>
-                  <ul>
-                    <?php foreach ($errors as $err): ?>
-                      <li><?php echo htmlspecialchars($err); ?></li>
-                    <?php endforeach; ?>
-                  </ul>
-                </div>
-                <a href="home.php" class="btn btn-secondary">Back</a>
-              <?php endif; ?>
+<?php
+$pageTitle = 'Registration Result';
+require_once __DIR__ . '/includes/header.php';
+?>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body text-center">
+          <?php if (empty($errors)): ?>
+            <h4 class="text-success">Account created</h4>
+            <p class="mb-3">Your account has been created. Please sign in.</p>
+            <a href="login.php" class="btn btn-primary">Sign in</a>
+          <?php else: ?>
+            <h4 class="text-danger">Registration failed</h4>
+            <div class="text-start small text-muted mb-3">
+              <strong>Errors:</strong>
+              <ul>
+                <?php foreach ($errors as $err): ?>
+                  <li><?php echo htmlspecialchars($err); ?></li>
+                <?php endforeach; ?>
+              </ul>
             </div>
-          </div>
+            <a href="home.php" class="btn btn-secondary">Back</a>
+          <?php endif; ?>
         </div>
       </div>
     </div>
-  </body>
-</html>
+  </div>
+</div>
+
+<?php
+$extra_scripts = '';
+include __DIR__ . '/includes/footer.php';
+?>
