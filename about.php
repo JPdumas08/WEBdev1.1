@@ -34,13 +34,15 @@ require_once __DIR__ . '/includes/header.php';
       <h2 class="text-center mb-5">Our Exquisite Collections</h2>
       
       <!-- Necklaces Collection -->
-      <div class="row mb-5">
-        <div class="col-md-4">
+      <div class="row mb-5 align-items-center">
+        <div class="col-md-6">
           <div class="text-center">
-            <img src="Video/Bracelet/necklotus.jpg" alt="Lotus Necklace" class="img-fluid rounded mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+            <div class="ratio ratio-16x9">
+              <img src="image/necklotus.jpg" alt="Lotus Necklace" class="img-fluid rounded mb-3" style="object-fit: cover; width: 100%; height: 100%;">
+            </div>
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-6">
           <h3 class="text-primary">Necklace Collection</h3>
           <p><strong>Our signature necklaces are designed to make every moment special.</strong></p>
           <ul class="list-unstyled">
@@ -54,8 +56,8 @@ require_once __DIR__ . '/includes/header.php';
       </div>
 
       <!-- Bracelets Collection -->
-      <div class="row mb-5">
-        <div class="col-md-8">
+      <div class="row mb-5 align-items-center">
+        <div class="col-md-6">
           <h3 class="text-primary">Bracelet Collection</h3>
           <p><strong>Elegant wrist accessories that complement your unique style.</strong></p>
           <ul class="list-unstyled">
@@ -66,21 +68,25 @@ require_once __DIR__ . '/includes/header.php';
             <li><strong>🔗 Tied Knot Bracelet (₱1,800.00)</strong> - A delicate interpretation of our signature knot design, this bracelet adds a touch of meaningful elegance to any outfit while representing the bonds that matter most.</li>
           </ul>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div class="text-center">
-            <img src="Video/Bracelet/lotusbrace.jpg" alt="Lotus Bracelet" class="img-fluid rounded mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+            <div class="ratio ratio-16x9">
+              <img src="image/lotusbrace.jpg" alt="Lotus Bracelet" class="img-fluid rounded mb-3" style="object-fit: cover; width: 100%; height: 100%;">
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Earrings Collection -->
-      <div class="row mb-5">
-        <div class="col-md-4">
+      <div class="row mb-5 align-items-center">
+        <div class="col-md-6">
           <div class="text-center">
-            <img src="Video/Bracelet/earlotus.jpg" alt="Lotus Earrings" class="img-fluid rounded mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+            <div class="ratio ratio-16x9">
+              <img src="image/earlotus.jpg" alt="Lotus Earrings" class="img-fluid rounded mb-3" style="object-fit: cover; width: 100%; height: 100%;">
+            </div>
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-6">
           <h3 class="text-primary">Earring Collection</h3>
           <p><strong>Complete your look with our stunning earring designs.</strong></p>
           <ul class="list-unstyled">
