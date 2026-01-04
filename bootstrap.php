@@ -106,7 +106,7 @@ init_session();
             <div class="card-body">
               <h5 class="card-title">Bracelet</h5>
               <p class="card-text">₱2,345.00</p>
-              <a href="#" class="btn btn-primary w-100">Add to Cart</a>
+              <a href="#" class="btn btn-primary w-100 add-to-cart" data-name="Bracelet" data-price="2345" data-image="image/bracelet.jpg">Add to Cart</a>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ init_session();
             <div class="card-body">
               <h5 class="card-title">Earrings</h5>
               <p class="card-text">₱1,600.00</p>
-              <a href="#" class="btn btn-primary w-100">Add to Cart</a>
+              <a href="#" class="btn btn-primary w-100 add-to-cart" data-name="Earrings" data-price="1600" data-image="image/earring.jpg">Add to Cart</a>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ init_session();
             <div class="card-body">
               <h5 class="card-title">Necklace</h5>
               <p class="card-text">₱2,499.00</p>
-              <a href="#" class="btn btn-primary w-100">Add to Cart</a>
+              <a href="#" class="btn btn-primary w-100 add-to-cart" data-name="Necklace" data-price="2499" data-image="image/necklace.jpg">Add to Cart</a>
             </div>
           </div>
         </div>
@@ -285,6 +285,71 @@ init_session();
   
   <!-- Shared authentication JS -->
   <script src="js/auth.js"></script>
+
+  <script>
+  $(document).ready(function() {
+    // Function to add item to cart
+    window.addToCart = function(name, price, image) {
+      // Get existing cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('jeweluxe_cart')) || [];
+      
+      // Check if item already exists
+      let existingItem = cart.find(item => item.name === name);
+      if (existingItem) {
+        existingItem.quantity = (existingItem.quantity || 1) + 1;
+      } else {
+        cart.push({
+          name: name, 
+          price: price, 
+          image: image,
+          quantity: 1,
+          sku: name.replace(/\s+/g, '').toUpperCase()
+        });
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
+      
+      // Show success message
+      showCartNotification(name + ' added to cart!');
+    };
+    
+    // Show cart notification
+    function showCartNotification(message) {
+      // Create notification element
+      const notification = $('<div class="alert alert-success alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999;">' +
+        '<i class="fas fa-check-circle me-2"></i>' + message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>');
+      
+      $('body').append(notification);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        notification.alert('close');
+      }, 3000);
+    };
+    
+    // Add click handlers to all "Add to Cart" buttons
+    $('.add-to-cart').click(function(e) {
+      e.preventDefault();
+      const btn = $(this);
+      
+      const name = btn.data('name');
+      const price = parseFloat(btn.data('price')) || 0;
+      const image = btn.data('image');
+      
+      // Add to localStorage cart
+      addToCart(name, price, image);
+      
+      // Visual feedback on button
+      btn.text('Added!').removeClass('btn-primary').addClass('btn-success');
+      setTimeout(() => {
+        btn.text('Add to Cart').removeClass('btn-success').addClass('btn-primary');
+      }, 1500);
+    });
+  });
+  </script>
 
 </body>
 </html>

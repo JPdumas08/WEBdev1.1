@@ -16,7 +16,7 @@ $pageTitle = $pageTitle ?? 'Jeweluxe';
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <!-- Custom stylesheet -->
-  <link href="/styles.css" rel="stylesheet">
+  <link href="dist/styles.css" rel="stylesheet">
   <!-- jQuery (needed by some inline page scripts) -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
@@ -193,8 +193,40 @@ $pageTitle = $pageTitle ?? 'Jeweluxe';
       </div>
       <div class="modal-footer" id="cartFooter" style="display: none;">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success">Proceed to Checkout</button>
+        <button type="button" class="btn btn-success" id="cartProceedBtn"
+                data-logged-in="<?php echo is_logged_in() ? '1' : '0'; ?>">Proceed to Checkout</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+// Handle proceed-to-checkout from the cart modal
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('cartProceedBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function() {
+    const loggedIn = btn.getAttribute('data-logged-in') === '1';
+    if (loggedIn) {
+      window.location.href = 'checkout.php';
+      return;
+    }
+
+    // Not logged in: close cart modal and open account modal for login
+    const cartEl = document.getElementById('cartModal');
+    const accountEl = document.getElementById('accountModal');
+    if (cartEl && typeof bootstrap !== 'undefined') {
+      const cartModal = bootstrap.Modal.getOrCreateInstance(cartEl);
+      cartModal.hide();
+    }
+    if (accountEl && typeof bootstrap !== 'undefined') {
+      const accountModal = bootstrap.Modal.getOrCreateInstance(accountEl);
+      accountModal.show();
+    } else {
+      // Fallback: redirect to login page
+      window.location.href = 'login.php?redirect=checkout';
+    }
+  });
+});
+</script>

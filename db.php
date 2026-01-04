@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost';
-$db   = 'WEBDEV-MAIN';
+$host = '127.0.0.1';
+$db   = 'web_dev';
 $user = 'root';
-$pass = '0420';
+$pass = '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

@@ -1,3 +1,79 @@
+/* ===== QUANTITY SELECTOR (SHOPEE STYLE) ===== */
+.quantity-selector {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.quantity-selector button {
+    width: 32px;
+    height: 32px;
+    background: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.quantity-selector button:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.quantity-selector button:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    background: #f9f9f9;
+}
+
+.quantity-selector input {
+    width: 50px !important;
+    height: 32px !important;
+    text-align: center !important;
+    border: none !important;
+    border-left: 1px solid #ddd !important;
+    border-right: 1px solid #ddd !important;
+    font-size: 16px !important;
+    background: #fff !important;
+    color: #333 !important;
+    outline: none !important;
+    padding: 0 0 0 2px !important;
+    margin: 0 !important;
+    line-height: 32px !important;
+    box-sizing: border-box !important;
+    letter-spacing: 0 !important;
+}
+
+/* Force center alignment for all browsers */
+.quantity-selector input[type="number"] {
+    text-align: center !important;
+    -moz-text-align-last: center !important;
+    text-align-last: center !important;
+    padding-left: 2px !important;
+}
+
+/* Hide number input spinner arrows */
+.quantity-selector input::-webkit-outer-spin-button,
+.quantity-selector input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+    display: none !important;
+}
+
+.quantity-selector input[type=number] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
+.quantity-selector input:focus {
+    outline: none !important;
+}
 /* ===== PRODUCT CARDS ===== */
 .product-card-large-square .card {
     width: 100%;
@@ -264,12 +340,98 @@ header h1 {
     text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 /* ===== GLOBAL STYLES ===== */
+html {
+    height: 100%;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #f8f9fa;
     line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== CART PAGE SPECIFIC ===== */
+.cart-page header.py-3 {
+    padding: 2rem 0;
+}
+
+.cart-page .display-4 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* ===== PRODUCT IMAGE FIXES ===== */
+.product-card-large .card-img-top,
+.cart-page img {
+    max-height: 320px;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
+}
+
+.product-card-large:hover .card-img-top,
+.cart-page img:hover {
+    transform: scale(1.05);
+}
+
+/* ===== RESPONSIVE IMAGES ===== */
+@media (max-width: 768px) {
+    .product-card-large .card-img-top,
+    .cart-page img {
+        max-height: 250px;
+    }
+}
+
+@media (max-width: 576px) {
+    .product-card-large .card-img-top,
+    .cart-page img {
+        max-height: 200px;
+    }
+}
+
+/* ===== HEADER IMPROVEMENTS ===== */
+header.cart-page {
+    position: relative;
+    overflow: hidden;
+}
+
+header.cart-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+header.cart-page .container {
+    position: relative;
+    z-index: 2;
+}
+
+header.cart-page h1,
+header.cart-page .lead {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Main content should grow to push footer down */
+main, .container-fluid {
+    flex: 1;
+}
+
+/* Ensure footer stays at bottom */
+footer {
+    margin-top: auto;
 }
 
 /* ===== TYPOGRAPHY IMPROVEMENTS ===== */

@@ -18,12 +18,14 @@ $user = current_user();
         <li class="nav-item"><a class="nav-link" href="products.php">Products</a></li>
         <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
           <li class="nav-item"><a class="nav-link" href="contactus.php">Contact</a></li>
-          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#cartModal">🛒 Cart</a></li>
+          <li class="nav-item" id="cartNav"><a class="nav-link" href="#" id="cartLink">🛒 Cart</a></li>
         <?php if (!empty($user)): ?>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               👤 <?= htmlspecialchars($user['first_name'] ?? $user['username'] ?? 'Account') ?></a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+              <li><a class="dropdown-item" href="order_history.php">Order History</a></li>
+              <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="logout.php">Logout</a></li>
             </ul>
           </li>

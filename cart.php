@@ -3,260 +3,267 @@ $pageTitle = 'Jeweluxe - Cart';
 require_once __DIR__ . '/init_session.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/header.php';
 init_session();
+require_once __DIR__ . '/includes/header.php';
+
+// Get cart from database instead of session
+$user_id = $_SESSION['user_id'] ?? null;
+$cart = [];
+$subtotal = 0;
+$shipping = 150.00;  // Fixed shipping cost
+$total = $shipping;   // Start with shipping
+
+if ($user_id) {
+    try {
+        // Get user's cart from database
+        $stmt = $pdo->prepare('SELECT cart_id FROM cart WHERE user_id = :user_id LIMIT 1');
+        $stmt->execute([':user_id' => $user_id]);
+        $cartRow = $stmt->fetch();
+        
+        if ($cartRow) {
+            $cart_id = (int)$cartRow['cart_id'];
+            
+            // Get cart items with product details
+            $q = "SELECT ci.cart_item_id AS item_id, ci.product_id, ci.quantity, p.product_name AS name, p.product_image AS image, ci.price
+                FROM cart_items ci
+                JOIN products p ON p.product_id = ci.product_id
+                WHERE ci.cart_id = :cart_id
+                ORDER BY ci.cart_item_id DESC";
+            $cstmt = $pdo->prepare($q);
+            $cstmt->execute([':cart_id' => $cart_id]);
+            $cart = $cstmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Calculate subtotal
+            foreach ($cart as $item) {
+                $itemTotal = (float)$item['price'] * (int)$item['quantity'];
+                $subtotal += $itemTotal;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Cart retrieval error: ' . $e->getMessage());
+    }
+}
+
+$total += $subtotal;
+
+// Determine if cart is empty
+$isEmpty = empty($cart);
 ?>
 
-  <!-- HERO -->
-  <header class="text-center text-white py-5 bg-dark" style="background:url(Video/wallpaper.jpg) center/cover no-repeat;">
-    <div class="container">
-      <h1 class="display-4">Your Shopping Cart</h1>
-      <p class="lead">Review your selected jewelry items before checkout!</p>
-    </div>
-  </header>
-
-  <!-- CART CONTENT -->
-  <section class="py-5">
-    <div class="container">
-      <!-- Empty Cart Content -->
-      <div id="emptyCart" class="text-center py-5">
-        <div class="mb-4">
-          <i class="fas fa-shopping-cart fa-4x text-muted"></i>
-        </div>
-        <h4 class="text-muted mb-3">Your cart is empty</h4>
-        <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
-        <a href="products.php" class="btn btn-primary btn-lg">
-          <i class="fas fa-shopping-bag me-2"></i>Start Shopping
-        </a>
+  <main class="flex-grow-1">
+    <!-- HERO -->
+    <header class="text-center text-white py-5 bg-dark" style="background:url(Video/wallpaper.jpg) center/cover no-repeat;">
+      <div class="container">
+        <h1 class="display-4">Your Shopping Cart</h1>
+        <p class="lead">Review your selected jewelry items before checkout!</p>
       </div>
+    </header>
+
+    <!-- CART CONTENT -->
+    <section class="py-5">
+      <div class="container">
+        <!-- Empty Cart Content -->
+        <div id="emptyCart" class="text-center py-5" style="display: <?php echo $isEmpty ? 'block' : 'none'; ?>;">
+          <div class="mb-4">
+            <i class="fas fa-shopping-cart fa-4x text-muted"></i>
+          </div>
+          <h4 class="text-muted mb-3">Your cart is empty</h4>
+          <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
+          <a href="products.php" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+          </a>
+        </div>
+        
+        <!-- Cart Items Content -->
+        <div id="cartItems" style="display: <?php echo !$isEmpty ? 'block' : 'none'; ?>;">
+          <div class="row">
+            <div class="col-lg-8">
+              <div class="cart-item-list">
+                <?php if (!$isEmpty): ?>
+                  <?php foreach ($cart as $index => $item): ?>
+                    <?php $maxStock = 99; // Maximum stock limit per item ?>
+                    <div class="card mb-3 product-card-large-square" data-item-id="<?php echo (int)$item['item_id']; ?>">  <!-- Added data-item-id -->
+                      <div class="card-body d-flex align-items-center">
+                        <?php 
+                          // Use product image from database
+                          $img = !empty($item['image']) ? htmlspecialchars($item['image']) : 'image/placeholder.png';
+                        ?>
+                        <img src="<?php echo $img; ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="me-3" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                        <div class="flex-grow-1">
+                          <h5 class="card-title"><?php echo htmlspecialchars($item['name']); ?></h5>
+                          <p class="card-text mb-2">Price: ₱<?php echo number_format($item['price'], 2); ?></p>
+                          <div class="d-flex align-items-center mb-2">
+                            <span class="me-2">Quantity:</span>
+                            <div class="quantity-selector">
+                              <button type="button" 
+                                      id="decrement-<?php echo $item['item_id']; ?>" 
+                                      onclick="changeQuantity(<?php echo (int)$item['item_id']; ?>, -1, <?php echo $item['quantity']; ?>, <?php echo $maxStock; ?>)"
+                                      <?php echo $item['quantity'] <= 1 ? 'disabled' : ''; ?>>-</button>
+                              <input type="number" 
+                                     id="quantity-<?php echo $item['item_id']; ?>" 
+                                     value="<?php echo $item['quantity']; ?>" 
+                                     min="1" 
+                                     max="<?php echo $maxStock; ?>" 
+                                     readonly>
+                              <button type="button" 
+                                      id="increment-<?php echo $item['item_id']; ?>" 
+                                      onclick="changeQuantity(<?php echo (int)$item['item_id']; ?>, 1, <?php echo $item['quantity']; ?>, <?php echo $maxStock; ?>)"
+                                      <?php echo $item['quantity'] >= $maxStock ? 'disabled' : ''; ?>>+</button>
+                            </div>
+                          </div>
+                          <p class="card-text"><strong>Subtotal: ₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></strong></p>
+                        </div>
+                        <div class="d-flex flex-column">
+                          <button class="btn btn-sm btn-danger" onclick="removeItem(<?php echo (int)$item['item_id']; ?>)"><i class="fas fa-trash"></i> Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotal">₱<?php echo number_format($subtotal, 2); ?></span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span id="cartShipping">₱<?php echo number_format($shipping, 2); ?></span>
+                  </div>
+                  <hr>
+                  <div class="d-flex justify-content-between mb-3">
+                    <strong>Total:</strong>
+                    <strong id="cartTotal">₱<?php echo number_format($total, 2); ?></strong>
+                  </div>
+                  <button type="button" class="btn btn-success w-100 mb-2" onclick="proceedToCheckout()">
+                    <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                  </button>
+                  <a href="products.php" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add JavaScript for cart interactions (place this before </body> in footer.php or here) -->
+  <script>
+    function changeQuantity(itemId, change, currentQty, maxStock) {
+      const newQuantity = currentQty + change;
       
-      <!-- Cart Items Content (hidden by default) -->
-      <div id="cartItems" style="display: none;">
-        <div class="row">
-          <div class="col-lg-8">
-            <div class="cart-item-list">
-              <!-- Cart items will be populated here via JavaScript -->
-            </div>
-          </div>
-          <div class="col-lg-4">
-            <div class="card">
-              <div class="card-header">
-                <h5 class="mb-0">Order Summary</h5>
-              </div>
-              <div class="card-body">
-                <div class="d-flex justify-content-between mb-2">
-                  <span>Subtotal:</span>
-                  <span id="cartSubtotal">₱0.00</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                  <span>Shipping:</span>
-                  <span id="cartShipping">₱150.00</span>
-                </div>
-                <hr>
-                <div class="d-flex justify-content-between mb-3">
-                  <strong>Total:</strong>
-                  <strong id="cartTotal">₱150.00</strong>
-                </div>
-                <button type="button" class="btn btn-success w-100 mb-2">
-                  <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
-                </button>
-                <a href="products.php" class="btn btn-outline-primary w-100">
-                  <i class="fas fa-arrow-left me-2"></i>Continue Shopping
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-<script>
-$(document).ready(function() {
-  // Initialize cart (we try server-side first, then fallback to localStorage)
-  let cart = [];
-
-  function useLocalCart() {
-    cart = JSON.parse(localStorage.getItem('jeweluxe_cart')) || [];
-    displayCart();
-  }
-
-  // Try fetching server-side cart (works when user is logged in). If that fails or returns empty, fall back to localStorage.
-  $.get('get_cart.php')
-    .done(function(resp) {
-      try {
-        // get_cart.php returns { success: true, cart: { items: [...] } }
-        const items = resp && resp.cart && Array.isArray(resp.cart.items) ? resp.cart.items : [];
-        if (resp && resp.success && items.length > 0) {
-          // Map server items into the local shape used by the UI, preserving cart_item id
-          cart = items.map(function(it) {
-            return {
-              item_id: it.item_id ? parseInt(it.item_id) : (it.itemId ? parseInt(it.itemId) : null),
-              product_id: it.product_id || it.productId || null,
-              name: it.name || it.product_name || it.productName || '',
-              price: parseFloat(it.price) || parseFloat(it.product_price) || 0,
-              image: it.image || it.product_image || 'image/placeholder.png',
-              quantity: parseInt(it.quantity || it.qty || 1) || 1,
-              sku: it.sku || ''
-            };
-          });
-          // Keep a localStorage mirror for offline UX
-          localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-          displayCart();
-        } else {
-          useLocalCart();
-        }
-      } catch (e) {
-        console.error('Error parsing server cart response', e, resp);
-        useLocalCart();
+      // Validate quantity limits
+      if (newQuantity < 1 || newQuantity > maxStock) {
+        return; // Don't proceed if out of bounds
       }
-    })
-    .fail(function() {
-      // server-side not available or user not logged in — use localStorage
-      useLocalCart();
-    });
-
-  // Display cart items
-  function displayCart() {
-    if (cart.length === 0) {
-      $('#emptyCart').show();
-      $('#cartItems').hide();
-    } else {
-      $('#emptyCart').hide();
-      $('#cartItems').show();
-      updateCartDisplay();
-    }
-  }
-  
-  // Update cart display
-  function updateCartDisplay() {
-    let cartHtml = '';
-    let subtotal = 0;
-    
-    cart.forEach(function(item, index) {
-      subtotal += (item.price || 0) * (item.quantity || 1);
-      cartHtml += `
-        <div class="card mb-3">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-2">
-                <img src="${item.image}" alt="${item.name}" class="img-fluid rounded" style="height: 80px; object-fit: cover;">
-              </div>
-              <div class="col-md-4">
-                <h6 class="mb-1">${item.name}</h6>
-                <small class="text-muted">SKU: ${item.sku || 'N/A'}</small>
-              </div>
-              <div class="col-md-2">
-                <span class="fw-bold">₱${item.price.toFixed(2)}</span>
-              </div>
-              <div class="col-md-2">
-                <div class="input-group">
-                  <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, -1)">-</button>
-                  <input type="number" class="form-control form-control-sm text-center" value="${item.quantity || 1}" min="1" max="10" onchange="updateQuantity(${index}, 0, this.value)">
-                  <button class="btn btn-outline-secondary btn-sm" type="button" onclick="updateQuantity(${index}, 1)">+</button>
-                </div>
-              </div>
-              <div class="col-md-2 text-end">
-                <span class="fw-bold">₱${((item.quantity || 1) * item.price).toFixed(2)}</span>
-                <br>
-                <button class="btn btn-outline-danger btn-sm mt-1" onclick="removeFromCart(${index})">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    });
-    
-    $('.cart-item-list').html(cartHtml);
-    
-    // Update totals
-    $('#cartSubtotal').text('₱' + subtotal.toFixed(2));
-    const shipping = subtotal > 0 ? 150.00 : 0;
-    $('#cartShipping').text('₱' + shipping.toFixed(2));
-    $('#cartTotal').text('₱' + (subtotal + shipping).toFixed(2));
-  }
-  
-  // Update quantity
-  window.updateQuantity = function(index, change, newValue) {
-    if (newValue !== undefined) {
-      cart[index].quantity = parseInt(newValue);
-    } else {
-      cart[index].quantity = (cart[index].quantity || 1) + change;
+      
+      // Update button states immediately for UX
+      const decrementBtn = document.getElementById('decrement-' + itemId);
+      const incrementBtn = document.getElementById('increment-' + itemId);
+      const quantityInput = document.getElementById('quantity-' + itemId);
+      
+      if (decrementBtn && incrementBtn && quantityInput) {
+        decrementBtn.disabled = (newQuantity <= 1);
+        incrementBtn.disabled = (newQuantity >= maxStock);
+        quantityInput.value = newQuantity;
+      }
+      
+      // Send AJAX request to update cart in database
+      updateQuantity(itemId, newQuantity);
     }
     
-    if (cart[index].quantity < 1) {
-      cart[index].quantity = 1;
+    function recalculateTotals() {
+      // Get all cart items and recalculate
+      let subtotal = 0;
+      document.querySelectorAll('.card-body').forEach(function(card) {
+        const priceText = card.querySelector('.card-text strong')?.textContent;
+        if (priceText && priceText.includes('Subtotal:')) {
+          const amount = parseFloat(priceText.replace('Subtotal: ₱', '').replace(/,/g, ''));
+          if (!isNaN(amount)) {
+            subtotal += amount;
+          }
+        }
+      });
+      
+      const shipping = subtotal > 0 ? 150.00 : 0;
+      const total = subtotal + shipping;
+      
+      // Update display
+      document.getElementById('cartSubtotal').textContent = '₱' + subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      document.getElementById('cartShipping').textContent = '₱' + shipping.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      document.getElementById('cartTotal').textContent = '₱' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    function updateQuantity(itemId, newQuantity) {
+      // Send AJAX request to update cart in database
+      fetch('update_cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId, quantity: newQuantity })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Update the item subtotal in the DOM
+          const card = document.querySelector('[data-item-id="' + itemId + '"]');
+          if (card) {
+            const priceElement = card.querySelector('.card-text:first-of-type');
+            if (priceElement) {
+              const priceMatch = priceElement.textContent.match(/₱([\d,]+\.\d{2})/);
+              if (priceMatch) {
+                const unitPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+                const newSubtotal = unitPrice * newQuantity;
+                const subtotalElement = card.querySelector('.card-text strong');
+                if (subtotalElement) {
+                  subtotalElement.parentElement.innerHTML = '<strong>Subtotal: ₱' + newSubtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '</strong>';
+                }
+              }
+            }
+          }
+          // Recalculate totals
+          recalculateTotals();
+        } else {
+          alert('Error updating cart');
+          location.reload();
+        }
+      })
+      .catch(error => {
+        alert('Error updating cart');
+        console.error('Update error:', error);
+        location.reload();
+      });
     }
 
-    // If this item exists on server (has item_id), update server as well
-    const item = cart[index];
-    if (item && item.item_id) {
-      $.post('update_cart.php', { item_id: item.item_id, quantity: item.quantity })
-        .done(function(resp) {
-          if (resp && resp.success) {
-            // reflect any canonical quantity from server
-            item.quantity = resp.quantity || item.quantity;
-            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-            updateCartDisplay();
-          } else {
-            console.error('Failed to update cart on server', resp);
-            // fallback: still update locally
-            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-            updateCartDisplay();
-          }
-        })
-        .fail(function(xhr, status, err) {
-          console.error('update_cart.php request failed', status, err, xhr.responseText);
-          // fallback to local update
-          localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-          updateCartDisplay();
-        });
-    } else {
-      // local-only item
-      localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-      updateCartDisplay();
+    function removeItem(itemId) {
+      // Remove item from database
+      fetch('remove_from_cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error removing item');
+        }
+      });
     }
-  };
-  
-  // Remove from cart
-  window.removeFromCart = function(index) {
-    const item = cart[index];
-    if (item && item.item_id) {
-      // ask server to remove
-      $.post('remove_from_cart.php', { item_id: item.item_id })
-        .done(function(resp) {
-          if (resp && resp.success) {
-            cart.splice(index, 1);
-            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-            displayCart();
-          } else {
-            console.error('Server failed to remove item', resp);
-            // still remove locally to keep UX responsive
-            cart.splice(index, 1);
-            localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-            displayCart();
-          }
-        })
-        .fail(function(xhr, status, err) {
-          console.error('remove_from_cart.php request failed', status, err, xhr.responseText);
-          // fallback: remove locally
-          cart.splice(index, 1);
-          localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-          displayCart();
-        });
-    } else {
-      // local-only item
-      cart.splice(index, 1);
-      localStorage.setItem('jeweluxe_cart', JSON.stringify(cart));
-      displayCart();
+
+    function proceedToCheckout() {
+      // Redirect to checkout page or handle logic
+      window.location.href = 'checkout.php';
     }
-  };
-  
-  // Initialize display
-  displayCart();
-});
-</script>
+  </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

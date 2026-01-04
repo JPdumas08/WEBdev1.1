@@ -40,6 +40,7 @@ try {
             'product_id' => (int)$it['product_id'],
             'name' => $it['name'],
             'price' => (float)$it['price'],
+            'image' => $it['image'],
             'quantity' => (int)$it['quantity'],
             'line_total' => $lineTotal
         ];

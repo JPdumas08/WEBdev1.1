@@ -15,7 +15,13 @@ function initializeValidation() {
   
   forms.forEach(form => {
     form.addEventListener('submit', function(event) {
-      if (!validateForm(form)) {
+      const isValid = validateForm(form);
+      if (!isValid) {
+        // Helpful console signal so we know the client blocked the submit
+        console.warn('Form submission blocked by client-side validation', {
+          formId: form.id || null,
+          action: form.getAttribute('action') || null
+        });
         event.preventDefault();
         event.stopPropagation();
       }
@@ -93,9 +99,13 @@ function validateInput(input) {
   }
   
   // Handle custom validations based on id or name
-  if (input.id === 'confirmPassword' || input.name === 'confirmPassword') {
-    const password = document.querySelector('#password') || document.querySelector('[name="password"]');
-    if (password && input.value !== password.value) {
+  if (input.id === 'confirmPassword' || input.name === 'confirmPassword' || input.name === 'confirm_password') {
+    // Scope the lookup to the same form so we don't accidentally grab the login password field.
+    const form = input.form || document;
+    const password = form.querySelector('#registerPassword') || form.querySelector('#password') || form.querySelector('[name="password"]');
+    const pwdVal = password ? password.value.trim() : '';
+    const confirmVal = input.value.trim();
+    if (password && confirmVal !== pwdVal) {
       isValid = false;
       errorMessage = 'Passwords do not match';
     }
@@ -125,7 +135,8 @@ function validateEmail(email) {
  * @returns {boolean} - Whether the password is valid
  */
 function validatePassword(password) {
-  return password.length >= 6;
+  // Match server-side requirement (8+)
+  return password.length >= 8;
 }
 
 /**
