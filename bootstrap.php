@@ -243,9 +243,10 @@ init_session();
               <label for="registerPassword" class="form-label">Password</label>
               <div class="input-group">
                 <input type="password" class="form-control" id="registerPassword" name="password" placeholder="Create a password" data-required="true">
-                <button class="btn btn-outline-secondary" type="button" id="toggleRegisterPassword">
-                  <i class="fas fa-eye" id="registerPasswordIcon"></i>
-                </button>
+              </div>
+              <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input" id="toggleRegisterPassword">
+                <label class="form-check-label" for="toggleRegisterPassword">Show Password</label>
               </div>
               <div class="form-text">Password must be at least 8 characters long.</div>
             </div>
@@ -253,9 +254,10 @@ init_session();
               <label for="confirmPassword" class="form-label">Confirm Password</label>
               <div class="input-group">
                 <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder="Confirm your password" data-required="true">
-                <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
-                  <i class="fas fa-eye" id="confirmPasswordIcon"></i>
-                </button>
+              </div>
+              <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input" id="toggleConfirmPassword">
+                <label class="form-check-label" for="toggleConfirmPassword">Show Password</label>
               </div>
             </div>
             <div class="mb-3 form-check">

@@ -10,6 +10,27 @@ if (empty($_SESSION['user_id'])) {
 
 $user_id = (int) $_SESSION['user_id'];
 
+// Get user data
+$user_sql = "SELECT first_name, last_name, email_address FROM users WHERE user_id = :uid";
+$user_stmt = $pdo->prepare($user_sql);
+$user_stmt->execute([':uid' => $user_id]);
+$user = $user_stmt->fetch(PDO::FETCH_ASSOC);
+
+// Fetch saved addresses
+$addresses_sql = "SELECT * FROM addresses WHERE user_id = :uid ORDER BY is_default DESC, created_at DESC";
+$addr_stmt = $pdo->prepare($addresses_sql);
+$addr_stmt->execute([':uid' => $user_id]);
+$addresses = $addr_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get default address
+$default_address = null;
+foreach ($addresses as $addr) {
+    if ($addr['is_default']) {
+        $default_address = $addr;
+        break;
+    }
+}
+
 // Get cart items (PDO)
 $cart_sql = "SELECT ci.cart_item_id AS item_id, ci.cart_id, ci.product_id, ci.quantity, ci.price,
                     p.product_name, p.product_image
@@ -46,7 +67,12 @@ $total = $subtotal + $shipping;
     <div class="container mt-5">
         <div class="row">
             <div class="col-md-8">
-                <h2 class="mb-4">Checkout</h2>
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <button class="btn btn-outline-secondary" onclick="window.history.back();" type="button">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h2 class="mb-0">Checkout</h2>
+                </div>
                 
                 <!-- Shipping Information -->
                 <div class="card mb-4">
@@ -54,59 +80,90 @@ $total = $subtotal + $shipping;
                         <h5 class="mb-0">Shipping Information</h5>
                     </div>
                     <div class="card-body">
-                        <form id="checkoutForm">
+                        <?php if (!empty($addresses)): ?>
+                            <div class="mb-4">
+                                <h6 class="mb-3">Select Saved Address</h6>
+                                <div class="row g-3" id="savedAddresses">
+                                    <?php foreach ($addresses as $addr): ?>
+                                        <div class="col-md-6">
+                                            <div class="card border cursor-pointer address-option" 
+                                                 data-address-id="<?php echo $addr['address_id']; ?>"
+                                                 style="cursor: pointer; transition: all 0.3s; <?php echo $addr['is_default'] ? 'border: 2px solid #0d6efd !important;' : ''; ?>">
+                                                <div class="card-body">
+                                                    <?php if ($addr['is_default']): ?>
+                                                        <span class="badge bg-primary mb-2">Default</span>
+                                                    <?php endif; ?>
+                                                    <h6 class="card-title mb-2"><?php echo htmlspecialchars($addr['full_name']); ?></h6>
+                                                    <small class="text-muted d-block"><?php echo htmlspecialchars($addr['phone']); ?></small>
+                                                    <small class="text-muted d-block"><?php echo htmlspecialchars($addr['address_line1']); ?><?php echo $addr['address_line2'] ? ', ' . htmlspecialchars($addr['address_line2']) : ''; ?></small>
+                                                    <small class="text-muted d-block"><?php echo htmlspecialchars($addr['city']); ?>, <?php echo htmlspecialchars($addr['state']); ?> <?php echo htmlspecialchars($addr['postal_code']); ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="address.php" class="btn btn-outline-secondary btn-sm">Manage Addresses</a>
+                                </div>
+                            </div>
+                            <hr>
+                        <?php else: ?>
+                            <div class="alert alert-warning mb-4">
+                                <strong>⚠️ No Saved Address</strong><br>
+                                You haven't added a shipping address yet. Please fill in the details below or <a href="address.php" class="alert-link">add a saved address</a>.
+                            </div>
+                        <?php endif; ?>
+
+                        <form id="checkoutForm" method="POST" action="process_checkout.php" onsubmit="return false;">
+                            <input type="hidden" name="checkout_form" value="1">
+                            <input type="hidden" id="addressId" name="addressId" value="<?php echo $default_address ? $default_address['address_id'] : ''; ?>">
+                            
+                            <h6 class="mb-3">Shipping Details</h6>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="firstName" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="lastName" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" required>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
+                                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email_address'] ?? ''); ?>" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                                <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($default_address['phone'] ?? ''); ?>" placeholder="09xx-xxx-xxxx" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="address" class="form-label">Street Address</label>
-                                <input type="text" class="form-control" id="address" name="address" required>
+                                <input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($default_address['address_line1'] ?? ''); ?>" placeholder="e.g., 123 Main Street" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="address2" class="form-label">Apartment, Suite, etc. (Optional)</label>
+                                <input type="text" class="form-control" id="address2" name="address2" value="<?php echo htmlspecialchars($default_address['address_line2'] ?? ''); ?>">
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="city" class="form-label">City</label>
-                                    <input type="text" class="form-control" id="city" name="city" required>
+                                    <input type="text" class="form-control" id="city" name="city" value="<?php echo htmlspecialchars($default_address['city'] ?? ''); ?>" placeholder="e.g., Manila" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="province" class="form-label">Province</label>
-                                    <select class="form-select" id="province" name="province" required>
-                                        <option value="">Select Province</option>
-                                        <option value="Metro Manila">Metro Manila</option>
-                                        <option value="Cavite">Cavite</option>
-                                        <option value="Laguna">Laguna</option>
-                                        <option value="Batangas">Batangas</option>
-                                        <option value="Rizal">Rizal</option>
-                                        <option value="Quezon">Quezon</option>
-                                        <option value="Bulacan">Bulacan</option>
-                                        <option value="Pampanga">Pampanga</option>
-                                        <option value="Tarlac">Tarlac</option>
-                                        <option value="Zambales">Zambales</option>
-                                    </select>
+                                    <label for="province" class="form-label">Province/State</label>
+                                    <input type="text" class="form-control" id="province" name="province" value="<?php echo htmlspecialchars($default_address['state'] ?? 'Metro Manila'); ?>" required>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="postalCode" class="form-label">Postal Code</label>
-                                <input type="text" class="form-control" id="postalCode" name="postalCode" required>
+                                <input type="text" class="form-control" id="postalCode" name="postalCode" value="<?php echo htmlspecialchars($default_address['postal_code'] ?? ''); ?>" placeholder="e.g., 1000" required>
                             </div>
                             
                             <div class="mb-3">
@@ -126,20 +183,32 @@ $total = $subtotal + $shipping;
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cod" checked>
                             <label class="form-check-label" for="cod">
-                                Cash on Delivery (COD)
-                            </label>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="gcash" value="gcash">
-                            <label class="form-check-label" for="gcash">
-                                GCash
+                                <strong>Cash on Delivery (COD)</strong>
+                                <div class="small text-muted">Pay when you receive your order</div>
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="paypal" value="paypal">
-                            <label class="form-check-label" for="paypal">
-                                PayPal
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="gcash" value="gcash">
+                            <label class="form-check-label" for="gcash">
+                                <strong>GCash</strong>
+                                <div class="small text-muted">Fast and secure mobile payment</div>
                             </label>
+                        </div>
+
+                        <!-- GCash Payment Details (hidden by default) -->
+                        <div id="gcashDetails" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                            <h6 class="mb-3">GCash Payment Instructions</h6>
+                            <div class="alert alert-info mb-3">
+                                <strong>Mobile Number:</strong> +63 9XX XXX XXXX
+                            </div>
+                            <ol class="small mb-0">
+                                <li>Open your GCash app</li>
+                                <li>Go to Send Money</li>
+                                <li>Enter the GCash number above</li>
+                                <li>Enter the amount: <strong id="gcashAmount">₱0.00</strong></li>
+                                <li>Add reference: Your Order ID (provided after checkout)</li>
+                                <li>Complete the transaction</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -211,7 +280,52 @@ $total = $subtotal + $shipping;
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Handle payment method changes
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const gcashDetails = document.getElementById('gcashDetails');
+                if (this.value === 'gcash') {
+                    gcashDetails.style.display = 'block';
+                } else {
+                    gcashDetails.style.display = 'none';
+                }
+            });
+        });
+
+        // Update GCash amount when total changes (if dynamically updated)
+        function updateGCashAmount() {
+            const totalElement = document.querySelector('[id*="Total"]');
+            if (totalElement) {
+                const totalText = totalElement.textContent.replace('₱', '').trim();
+                document.getElementById('gcashAmount').textContent = '₱' + totalText;
+            }
+        }
+
+        // Initial update
+        updateGCashAmount();
+
         document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            // IMPORTANT: Prevent default form submission immediately
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Validate required fields exist and are not empty
+            const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'province', 'postalCode'];
+            let hasErrors = false;
+            
+            for (let field of requiredFields) {
+                const element = document.getElementById(field);
+                if (!element || !element.value.trim()) {
+                    hasErrors = true;
+                    ToastNotification.error(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
+                    break;
+                }
+            }
+            
+            if (hasErrors) return false;
+            
+            
+            // Prevent default form submission
             e.preventDefault();
             
             // Get form data
@@ -221,26 +335,103 @@ $total = $subtotal + $shipping;
             // Add payment method to form data
             formData.append('paymentMethod', paymentMethod);
             
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            }
+            
             // Send to process_checkout.php
             fetch('process_checkout.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Redirect to order confirmation
-                    window.location.href = 'order_confirmation.php?order_id=' + data.order_id;
+                    // Redirect to appropriate page based on payment method
+                    const redirect_url = data.redirect_url || ('order_confirmation.php?order_id=' + data.order_id);
+                    ToastNotification.success('Order placed successfully! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = redirect_url;
+                    }, 1500);
                 } else {
                     // Show error message
-                    alert(data.message || 'An error occurred while processing your order.');
+                    ToastNotification.error(data.message || 'An error occurred while processing your order.');
+                    // Re-enable button
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Place Order';
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while processing your order.');
+                ToastNotification.error('Network error: ' + error.message);
+                // Re-enable button
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Place Order';
+                }
+            });
+            
+            return false;
+        });
+
+        // Handle address selection
+        document.querySelectorAll('.address-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove active state from all options
+                document.querySelectorAll('.address-option').forEach(o => {
+                    o.style.borderColor = '#dee2e6';
+                    o.style.borderWidth = '1px';
+                });
+                
+                // Add active state to selected option
+                this.style.borderColor = '#0d6efd';
+                this.style.borderWidth = '2px';
+                
+                // Get address data from clicked card
+                const addressId = this.dataset.addressId;
+                const fullName = this.querySelector('.card-title').textContent.trim();
+                const phone = this.querySelector('small').textContent.trim();
+                const addressText = Array.from(this.querySelectorAll('small')).slice(1).map(el => el.textContent.trim()).join(', ');
+                
+                // Parse address components
+                const addressParts = addressText.split(',').map(p => p.trim());
+                let addressLine1 = addressParts[0] || '';
+                let addressLine2 = addressParts[1] || '';
+                let cityState = addressParts[2] || '';
+                let postalCode = addressParts[3] || '';
+                
+                const nameParts = fullName.split(' ');
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(' ');
+                
+                // Update form fields
+                document.getElementById('addressId').value = addressId;
+                document.getElementById('firstName').value = firstName;
+                document.getElementById('lastName').value = lastName;
+                document.getElementById('phone').value = phone;
+                document.getElementById('address').value = addressLine1;
+                document.getElementById('address2').value = addressLine2;
+                document.getElementById('city').value = cityState.split(/\s+/)[0];
+                document.getElementById('province').value = cityState;
+                document.getElementById('postalCode').value = postalCode;
             });
         });
+
+        // Set initial active state on page load
+        const defaultAddress = document.querySelector('[data-address-id]');
+        if (defaultAddress) {
+            defaultAddress.click();
+        }
     </script>
 </body>
 </html>

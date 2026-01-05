@@ -1,5 +1,39 @@
 // Lightweight auth behavior: preview & inline feedback
 $(document).ready(function() {
+  // Password toggle functionality - using event delegation for all password fields
+  $(document).on('change', '#toggleLoginPassword', function() {
+    const passwordField = $('#loginPassword');
+    if (passwordField.length) {
+      if (this.checked) {
+        passwordField.attr('type', 'text');
+      } else {
+        passwordField.attr('type', 'password');
+      }
+    }
+  });
+
+  $(document).on('change', '#toggleRegisterPassword', function() {
+    const passwordField = $('#registerPassword');
+    if (passwordField.length) {
+      if (this.checked) {
+        passwordField.attr('type', 'text');
+      } else {
+        passwordField.attr('type', 'password');
+      }
+    }
+  });
+
+  $(document).on('change', '#toggleConfirmPassword', function() {
+    const passwordField = $('#confirmPassword');
+    if (passwordField.length) {
+      if (this.checked) {
+        passwordField.attr('type', 'text');
+      } else {
+        passwordField.attr('type', 'password');
+      }
+    }
+  });
+
   // Live preview for non-sensitive fields
   function updatePreview() {
     const first = $('#firstName').val().trim();
@@ -94,28 +128,23 @@ $(document).ready(function() {
       url: url,
       method: 'POST',
       data: data,
-      dataType: 'json'
+      dataType: 'json',
+      timeout: 5000
     }).done(function(resp) {
       if (resp && resp.success) {
-        // Update modal body to show signed-in UI
-        const display = $('<div class="text-center py-3">'
-          + '<h5>Signed in as</h5>'
-          + '<p class="lead">' + $('<div>').text(resp.user.display).html() + '</p>'
-          + '<div class="d-grid gap-2">'
-          + '<a class="btn btn-outline-secondary" href="logout.php">Sign Out</a>'
-          + '</div>'
-          + '</div>');
-
-        const $modalBody = $form.closest('.modal-body');
-        $modalBody.html(display);
+        // Immediately reload page to refresh session
+        window.location.reload();
       } else {
         const msg = (resp && resp.error) ? resp.error : 'Login failed';
-        // show small inline alert above form
-        $form.prepend('<div class="alert alert-danger small mb-3">' + $('<div>').text(msg).html() + '</div>');
+        // Clear previous errors
+        $form.find('.alert-danger').remove();
+        // Show error
+        $form.prepend('<div class="alert alert-danger small mb-3">Error: ' + $('<div>').text(msg).html() + '</div>');
+        $form.find('button[type="submit"]').prop('disabled', false).text('Sign In');
       }
-    }).fail(function() {
-      $form.prepend('<div class="alert alert-danger small mb-3">An error occurred while signing in.</div>');
-    }).always(function() {
+    }).fail(function(xhr, status, error) {
+      $form.find('.alert-danger').remove();
+      $form.prepend('<div class="alert alert-danger small mb-3">Connection error. Please try again.</div>');
       $form.find('button[type="submit"]').prop('disabled', false).text('Sign In');
     });
   });

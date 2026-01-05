@@ -203,7 +203,10 @@ $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Action Buttons -->
                 <div class="text-center mb-5">
                     <a href="products.php" class="btn btn-outline-primary me-2">Continue Shopping</a>
-                    <a href="order_history.php" class="btn btn-primary">View Order History</a>
+                    <a href="order_history.php" class="btn btn-primary me-2">View Order History</a>
+                    <button type="button" class="btn btn-outline-danger" id="cancelOrderBtn">
+                        <i class="fas fa-times-circle"></i> Cancel Order
+                    </button>
                 </div>
             </div>
         </div>
@@ -212,5 +215,62 @@ $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php include 'includes/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Handle cancel order functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const cancelBtn = document.getElementById('cancelOrderBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    ConfirmModal.show(
+                        '⚠️ Cancel Order',
+                        'Are you sure you want to cancel this order? This action cannot be undone.',
+                        function() {
+                            // Get order_id from URL
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const orderId = urlParams.get('order_id');
+                            
+                            if (!orderId) {
+                                ToastNotification.error('Order ID not found.');
+                                return;
+                            }
+                            
+                            // Disable button during request
+                            cancelBtn.disabled = true;
+                            cancelBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cancelling...';
+                            
+                            // Send cancel request
+                            fetch('cancel_order.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ order_id: parseInt(orderId) })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    ToastNotification.success('Order cancelled successfully.');
+                                    setTimeout(() => {
+                                        window.location.href = 'order_history.php';
+                                    }, 1500);
+                                } else {
+                                    ToastNotification.error(data.message || 'Failed to cancel order.');
+                                    cancelBtn.disabled = false;
+                                    cancelBtn.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Order';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                ToastNotification.error('An error occurred while cancelling the order.');
+                                cancelBtn.disabled = false;
+                                cancelBtn.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Order';
+                            });
+                        }
+                    );
+                });
+            }
+        });
+    </script>
 </body>
 </html>

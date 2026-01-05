@@ -31,9 +31,10 @@ require_once __DIR__ . '/includes/header.php';
                 <label for="loginPassword" class="form-label">Password</label>
                 <div class="input-group">
                   <input name="password" type="password" class="form-control" id="loginPassword" placeholder="Enter your password" data-required="true">
-                  <button class="btn btn-outline-secondary" type="button" id="toggleLoginPassword">
-                    <i class="fas fa-eye" id="loginPasswordIcon"></i>
-                  </button>
+                </div>
+                <div class="form-check mt-2">
+                  <input type="checkbox" class="form-check-input" id="toggleLoginPassword">
+                  <label class="form-check-label" for="toggleLoginPassword">Show Password</label>
                 </div>
               </div>
               <div class="mb-3 form-check">
@@ -66,20 +67,6 @@ init_session();
 ?>
 <script>
 $(document).ready(function() {
-  // Password toggle functionality
-  $('#toggleLoginPassword').click(function() {
-    const passwordField = $('#loginPassword');
-    const icon = $('#loginPasswordIcon');
-    
-    if (passwordField.attr('type') === 'password') {
-      passwordField.attr('type', 'text');
-      icon.removeClass('fa-eye').addClass('fa-eye-slash');
-    } else {
-      passwordField.attr('type', 'password');
-      icon.removeClass('fa-eye-slash').addClass('fa-eye');
-    }
-  });
-  
   // Auto-trim spaces on input
   $('input[type="text"], input[type="email"]').on('blur', function() {
     $(this).val($(this).val().trim());

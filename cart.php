@@ -232,12 +232,12 @@ $isEmpty = empty($cart);
           // Recalculate totals
           recalculateTotals();
         } else {
-          alert('Error updating cart');
+          ToastNotification.error('Error updating cart');
           location.reload();
         }
       })
       .catch(error => {
-        alert('Error updating cart');
+        ToastNotification.error('Error updating cart');
         console.error('Update error:', error);
         location.reload();
       });
@@ -255,7 +255,7 @@ $isEmpty = empty($cart);
         if (data.success) {
           location.reload();
         } else {
-          alert('Error removing item');
+          ToastNotification.error('Error removing item');
         }
       });
     }

@@ -89,6 +89,9 @@ try {
             $_SESSION['user']['id'] = (int)$normalizedId;
         }
     }
+    
+    // Ensure session is written to storage before redirecting
+    session_write_close();
 
     if (wants_json()) {
         header('Content-Type: application/json');

@@ -7,12 +7,20 @@ require_once __DIR__ . '/includes/auth.php';
 // Ensure session is started and normalized
 init_session();
 
-// Normalize a simple user id into $_SESSION['user_id'] for APIs
-if (!empty($_SESSION['user']) && empty($_SESSION['user_id'])) {
-    // prefer common keys used by different user tables
-    $id = $_SESSION['user']['id'] ?? $_SESSION['user']['user_id'] ?? null;
-    if ($id !== null) {
-        $_SESSION['user_id'] = $id;
+// Normalize user data into $_SESSION['user_id'] for compatibility
+if (!empty($_SESSION['user'])) {
+    // Prefer direct user_id if already set
+    if (empty($_SESSION['user_id'])) {
+        // Extract from nested user array
+        $id = $_SESSION['user']['id'] ?? $_SESSION['user']['user_id'] ?? null;
+        if ($id !== null) {
+            $_SESSION['user_id'] = (int)$id;
+        }
+    }
+} elseif (!empty($_SESSION['user_id'])) {
+    // If user_id exists but user array doesn't, try to populate it
+    if (empty($_SESSION['user'])) {
+        $_SESSION['user'] = ['id' => (int)$_SESSION['user_id']];
     }
 }
 
@@ -29,3 +37,4 @@ function require_login_json()
 }
 
 ?>
+

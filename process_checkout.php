@@ -3,12 +3,14 @@ require_once __DIR__ . '/init_session.php';
 require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // Ensure session is active
 init_session();
 
 // Check if user is logged in
 if (empty($_SESSION['user_id'])) {
+    error_log('Checkout failed: No user_id in session. Session data: ' . json_encode($_SESSION));
     echo json_encode(['success' => false, 'message' => 'Please log in to continue.']);
     exit();
 }
@@ -25,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $required_fields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'province', 'postalCode', 'paymentMethod'];
 foreach ($required_fields as $field) {
     if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
-        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields.']);
+        echo json_encode(['success' => false, 'message' => "Field '$field' is required. Please fill in all fields and try again."]);
         exit();
     }
 }
@@ -94,9 +96,13 @@ try {
     // Generate unique order number
     $order_number = 'ORD' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
+    // Set payment status based on payment method
+    // COD: pending, GCash: pending (user needs to send payment)
+    $payment_status = 'pending';
+
     // Insert order (align with schema columns that exist in WEBDEV-MAIN.sql)
-    $order_sql = "INSERT INTO orders (user_id, order_number, subtotal, shipping_cost, tax, total_amount, payment_method, shipping_address, billing_address)
-                  VALUES (:uid, :order_number, :subtotal, :shipping, :tax, :total, :payment_method, :shipping_address, :billing_address)";
+    $order_sql = "INSERT INTO orders (user_id, order_number, subtotal, shipping_cost, tax, total_amount, payment_method, payment_status, shipping_address, billing_address)
+                  VALUES (:uid, :order_number, :subtotal, :shipping, :tax, :total, :payment_method, :payment_status, :shipping_address, :billing_address)";
 
     $order_stmt = $pdo->prepare($order_sql);
     $order_stmt->execute([
@@ -107,6 +113,7 @@ try {
         ':tax' => $tax,
         ':total' => $total,
         ':payment_method' => $paymentMethod,
+        ':payment_status' => $payment_status,
         ':shipping_address' => $shipping_address,
         ':billing_address' => $shipping_address
     ]);
@@ -149,10 +156,18 @@ try {
 
     $pdo->commit();
 
+    // Determine redirect based on payment method
+    $redirect_url = 'order_confirmation.php?order_id=' . $order_id;
+    if ($paymentMethod === 'gcash') {
+        $redirect_url = 'gcash_payment.php?order_id=' . $order_id;
+    }
+
     echo json_encode([
         'success' => true,
         'order_id' => $order_id,
         'order_number' => $order_number,
+        'payment_method' => $paymentMethod,
+        'redirect_url' => $redirect_url,
         'message' => 'Order placed successfully!'
     ]);
     exit();

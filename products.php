@@ -57,8 +57,13 @@ require_once __DIR__ . '/includes/header.php';
             $price = '₱' . number_format((float)$p['product_price'], 2);
         ?>
             <div class="col">
-              <div class="card h-100 text-center product-card-large">
-                <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>">
+              <div class="card h-100 text-center product-card-large position-relative">
+                <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle wishlist-btn" 
+                        data-product-id="<?= $p['product_id'] ?>" 
+                        style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; background: rgba(255,255,255,0.9); z-index: 10; pointer-events: auto; cursor: pointer;">
+                  <span class="wishlist-icon" style="font-size: 1.2rem;">♡</span>
+                </button>
+                <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>" style="position: relative; z-index: 1;">
                 <div class="card-body">
                   <h5 class="card-title"><?= $name ?></h5>
                   <p class="card-text text-muted mb-2"><?= $price ?></p>
@@ -86,8 +91,13 @@ require_once __DIR__ . '/includes/header.php';
           $price = '₱' . number_format((float)$p['product_price'], 2);
         ?>
           <div class="col">
-            <div class="card h-100 text-center product-card-large">
-              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>">
+            <div class="card h-100 text-center product-card-large position-relative">
+              <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle wishlist-btn" 
+                      data-product-id="<?= $p['product_id'] ?>" 
+                      style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; background: rgba(255,255,255,0.9); z-index: 10; pointer-events: auto; cursor: pointer;">
+                <span class="wishlist-icon" style="font-size: 1.2rem;">♡</span>
+              </button>
+              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>" style="position: relative; z-index: 1;">
               <div class="card-body">
                 <h5 class="card-title"><?= $name ?></h5>
                 <p class="card-text text-muted mb-2"><?= $price ?></p>
@@ -112,8 +122,13 @@ require_once __DIR__ . '/includes/header.php';
           $price = '₱' . number_format((float)$p['product_price'], 2);
         ?>
           <div class="col">
-            <div class="card h-100 text-center product-card-large">
-              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>">
+            <div class="card h-100 text-center product-card-large position-relative">
+              <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle wishlist-btn" 
+                      data-product-id="<?= $p['product_id'] ?>" 
+                      style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; background: rgba(255,255,255,0.9); z-index: 10; pointer-events: auto; cursor: pointer;">
+                <span class="wishlist-icon" style="font-size: 1.2rem;">♡</span>
+              </button>
+              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>" style="position: relative; z-index: 1;">
               <div class="card-body">
                 <h5 class="card-title"><?= $name ?></h5>
                 <p class="card-text text-muted mb-2"><?= $price ?></p>
@@ -138,8 +153,13 @@ require_once __DIR__ . '/includes/header.php';
           $price = '₱' . number_format((float)$p['product_price'], 2);
         ?>
           <div class="col">
-            <div class="card h-100 text-center product-card-large">
-              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>">
+            <div class="card h-100 text-center product-card-large position-relative">
+              <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle wishlist-btn" 
+                      data-product-id="<?= $p['product_id'] ?>" 
+                      style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; background: rgba(255,255,255,0.9); z-index: 10; pointer-events: auto; cursor: pointer;">
+                <span class="wishlist-icon" style="font-size: 1.2rem;">♡</span>
+              </button>
+              <img src="<?= $img ?>" class="card-img-top" alt="<?= $name ?>" style="position: relative; z-index: 1;">
               <div class="card-body">
                 <h5 class="card-title"><?= $name ?></h5>
                 <p class="card-text text-muted mb-2"><?= $price ?></p>
@@ -267,13 +287,29 @@ $(document).ready(function() {
     const price = parseFloat(btn.data('price')) || parseFloat(btn.closest('.card').find('.card-text').text().replace('₱', '').replace(/,/g, '')) || 0;
     const image = btn.data('image') || btn.closest('.card').find('img').attr('src');
 
-    // Keep localStorage fallback for offline UX
-    addToCart(name, price, image);
+    // Visual feedback on the button (show it's processing)
+    btn.text('Adding...').removeClass('btn-primary').addClass('btn-secondary').prop('disabled', true);
 
     // Send add-to-cart request to server (relative path, no leading slash)
     $.post('add_to_cart.php', { product_id: productId, quantity: 1 })
       .done(function(resp) {
+          // Check if user needs to log in
+          if (resp && resp.error === 'Please log in to use the cart.') {
+            ToastNotification.warning('Please log in to add items to your cart.');
+            // Open account modal for login
+            setTimeout(() => {
+              const accountModal = new bootstrap.Modal(document.getElementById('accountModal'));
+              accountModal.show();
+            }, 500);
+            // Reset button
+            btn.text('Add to Cart').removeClass('btn-secondary').addClass('btn-primary').prop('disabled', false);
+            return;
+          }
+          
           if (resp && resp.success) {
+            // NOW add to localStorage after server confirms
+            addToCart(name, price, image);
+            
             // sync server-side item_id into localStorage cart
             try {
               const serverItem = resp.item;
@@ -298,23 +334,21 @@ $(document).ready(function() {
             } catch (e) {
               console.error('Failed to sync cart with server response', e, resp);
             }
-            showCartNotification(name + ' added to cart!');
+            ToastNotification.success(name + ' added to cart!');
           } else {
             const msg = resp && resp.message ? resp.message : 'Could not add to cart.';
-            showCartNotification('Server error: ' + msg);
+            ToastNotification.error('Server error: ' + msg);
             console.error('Add to cart response error:', resp);
+            // Reset button
+            btn.text('Add to Cart').removeClass('btn-secondary').addClass('btn-primary').prop('disabled', false);
           }
         })
       .fail(function(xhr, status, err) {
-        showCartNotification('Server error adding to cart');
+        ToastNotification.error('Server error adding to cart');
         console.error('Add to cart AJAX failed:', status, err, xhr.responseText);
+        // Reset button
+        btn.text('Add to Cart').removeClass('btn-secondary').addClass('btn-primary').prop('disabled', false);
       });
-
-    // Visual feedback on the button
-    btn.text('Added!').removeClass('btn-primary').addClass('btn-success');
-    setTimeout(() => {
-      btn.text('Add to Cart').removeClass('btn-success').addClass('btn-primary');
-    }, 1500);
   });
 
   function displayCartModal() {
@@ -451,6 +485,54 @@ $(document).ready(function() {
       displayCart();
     }
   };
+
+  // Wishlist functionality
+  document.querySelectorAll('.wishlist-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const productId = this.dataset.productId;
+      const icon = this.querySelector('.wishlist-icon');
+      
+      // Check if user is logged in
+      if (!<?php echo !empty($_SESSION['user_id']) ? 'true' : 'false'; ?>) {
+        ToastNotification.warning('Please log in to use the wishlist.');
+        setTimeout(() => window.location.href = 'login.php?redirect=products.php', 1500);
+        return;
+      }
+      
+      fetch('add_to_wishlist.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'product_id=' + productId
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          if (data.action === 'added') {
+            icon.textContent = '♥';
+            icon.style.color = '#e74c3c';
+            this.style.background = 'rgba(231, 76, 60, 0.15)';
+            showCartNotification(data.message);
+          } else if (data.action === 'removed') {
+            icon.textContent = '♡';
+            icon.style.color = 'inherit';
+            this.style.background = 'rgba(255,255,255,0.9)';
+            showCartNotification(data.message);
+          }
+        } else {
+          ToastNotification.error(data.message || 'Error updating wishlist.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        ToastNotification.error('An error occurred.');
+      });
+    });
+  });
 });
 </script>
 

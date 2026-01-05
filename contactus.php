@@ -234,7 +234,7 @@ require_once __DIR__ . '/includes/header.php';
                 $('#contactForm button[type="submit"]').text('Sending...').prop('disabled', true);
 
                 setTimeout(() => {
-                  alert('Message sent successfully! We will get back to you within 24 hours.');
+                  ToastNotification.success('Message sent successfully! We will get back to you within 24 hours.');
                   $('#contactForm')[0].reset();
                   $('#contactForm button[type="submit"]').text('Send Message').prop('disabled', false);
                   $('.is-invalid').removeClass('is-invalid');

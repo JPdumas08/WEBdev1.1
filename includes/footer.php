@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Custom scripts (if any) -->
   <script src="js/validation.js"></script>
+  <script src="js/auth.js"></script>
 
   <!-- Cart page functionality - only load if on cart page -->
   <?php if (basename($_SERVER['PHP_SELF']) === 'cart.php'): ?>
@@ -394,8 +395,7 @@
     // send as form-encoded POST
     $.post('update_cart.php', { item_id: item_id, quantity: quantity }).done(function(resp) {
       if (!resp || !resp.success) {
-        // show a minimal alert (could be improved)
-        alert('Could not update cart item.');
+        ToastNotification.error('Could not update cart item.');
         return;
       }
 
@@ -410,7 +410,7 @@
       // Refresh to get accurate totals and line totals
       refreshCartModal($modal);
     }).fail(function() {
-      alert('Network error while updating cart.');
+      ToastNotification.error('Network error while updating cart.');
     });
   }
 
@@ -419,12 +419,12 @@
     $modal = $modal || $('#cartModal');
     $.post('remove_from_cart.php', { item_id: item_id }).done(function(resp) {
       if (!resp || !resp.success) {
-        alert('Could not remove item from cart.');
+        ToastNotification.error('Could not remove item from cart.');
         return;
       }
       refreshCartModal($modal);
     }).fail(function() {
-      alert('Network error while removing item.');
+      ToastNotification.error('Network error while removing item.');
     });
   }
 

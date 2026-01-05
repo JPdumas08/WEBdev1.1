@@ -26,14 +26,24 @@ function init_session(): bool {
 
 function login_user(array $userRow): void {
     init_session();
+    
+    // Get the user ID from various possible column names
+    $user_id = $userRow['id'] ?? ($userRow['user_id'] ?? ($userRow['userId'] ?? null));
+    
     // store minimal user info in session
     $_SESSION['user'] = [
-        'id' => $userRow['id'] ?? ($userRow['user_id'] ?? ($userRow['userId'] ?? null)),
+        'id' => $user_id,
         'first_name' => $userRow['first_name'] ?? $userRow['firstName'] ?? '',
         'last_name' => $userRow['last_name'] ?? $userRow['lastName'] ?? '',
         'username' => $userRow['username'] ?? $userRow['user_name'] ?? '',
         'email' => $userRow['email'] ?? $userRow['email_address'] ?? ''
     ];
+    
+    // Also set user_id directly for compatibility with checkout and other pages
+    if ($user_id !== null) {
+        $_SESSION['user_id'] = (int)$user_id;
+    }
+    
     // regenerate session id to mitigate fixation
     session_regenerate_id(true);
 }

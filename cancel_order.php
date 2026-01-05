@@ -1,56 +1,69 @@
 <?php
-require_once 'includes/auth.php';
-require_once 'db.php';
+require_once __DIR__ . '/init_session.php';
+require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json');
 
+// Ensure session is active
+init_session();
+
 // Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+if (empty($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Please log in to continue.']);
     exit();
 }
 
-// Get POST data
-$data = json_decode(file_get_contents('php://input'), true);
-$order_id = isset($data['order_id']) ? (int)$data['order_id'] : 0;
-$user_id = $_SESSION['user_id'];
+// Get POST data (handle both JSON and form data)
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
 
-if ($order_id === 0) {
+// Fallback to $_POST if JSON parsing fails
+if (!$data && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = $_POST;
+}
+
+$order_id = isset($data['order_id']) ? (int)$data['order_id'] : 0;
+$user_id = (int)$_SESSION['user_id'];
+
+if ($order_id <= 0) {
     echo json_encode(['success' => false, 'message' => 'Invalid order ID.']);
     exit();
 }
 
-// Check if order belongs to user and is in pending status
-$check_query = "SELECT order_id FROM orders WHERE order_id = ? AND user_id = ? AND order_status = 'pending'";
-$stmt = $conn->prepare($check_query);
-$stmt->bind_param("ii", $order_id, $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
+// Check if order belongs to user and can be cancelled
+$check_sql = "SELECT order_id, order_status, payment_status FROM orders 
+              WHERE order_id = :oid AND user_id = :uid";
+$check_stmt = $pdo->prepare($check_sql);
+$check_stmt->execute([':oid' => $order_id, ':uid' => $user_id]);
+$order = $check_stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($result->num_rows === 0) {
-    echo json_encode(['success' => false, 'message' => 'Order not found or cannot be cancelled.']);
+if (!$order) {
+    echo json_encode(['success' => false, 'message' => 'Order not found.']);
     exit();
 }
 
-// Update order status
-$conn->begin_transaction();
+// Check if order can be cancelled (pending or processing status)
+$cancelable_statuses = ['pending', 'processing'];
+if (!in_array($order['order_status'] ?? 'pending', $cancelable_statuses)) {
+    echo json_encode(['success' => false, 'message' => 'This order cannot be cancelled. It may have already shipped or been delivered.']);
+    exit();
+}
+
+// Begin transaction
 try {
-    $update_query = "UPDATE orders SET order_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?";
-    $stmt = $conn->prepare($update_query);
-    $stmt->bind_param("i", $order_id);
-    $stmt->execute();
+    $pdo->beginTransaction();
     
-    // Update payment status
-    $update_payment_query = "UPDATE payments SET status = 'refunded' WHERE order_id = ?";
-    $stmt = $conn->prepare($update_payment_query);
-    $stmt->bind_param("i", $order_id);
-    $stmt->execute();
+    // Update order status to cancelled
+    $update_sql = "UPDATE orders SET order_status = 'cancelled' WHERE order_id = :oid AND user_id = :uid";
+    $update_stmt = $pdo->prepare($update_sql);
+    $update_stmt->execute([':oid' => $order_id, ':uid' => $user_id]);
     
-    $conn->commit();
+    $pdo->commit();
+    
     echo json_encode(['success' => true, 'message' => 'Order cancelled successfully.']);
     
 } catch (Exception $e) {
-    $conn->rollback();
+    $pdo->rollBack();
     error_log("Cancel order error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Failed to cancel order. Please try again.']);
 }

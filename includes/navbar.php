@@ -24,6 +24,8 @@ $user = current_user();
             <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               👤 <?= htmlspecialchars($user['first_name'] ?? $user['username'] ?? 'Account') ?></a>
 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+              <li><a class="dropdown-item" href="account_settings.php">Account Settings</a></li>
+              <li><a class="dropdown-item" href="notifications.php">Notifications</a></li>
               <li><a class="dropdown-item" href="order_history.php">Order History</a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="logout.php">Logout</a></li>
