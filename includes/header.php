@@ -328,3 +328,43 @@ const ConfirmModal = {
   }
 };
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const isLoggedIn = <?php echo is_logged_in() ? 'true' : 'false'; ?>;
+  const params = new URLSearchParams(window.location.search);
+  const loginStatus = params.get('login');
+  const showLogin = params.get('showLogin');
+  const registered = params.get('registered');
+
+  const loginMessages = {
+    ok: { type: 'success', text: 'Login successful! Welcome back.' },
+    missing: { type: 'error', text: 'Please fill in all required fields.' },
+    notfound: { type: 'error', text: 'User not found. Please check your credentials.' },
+    bad: { type: 'error', text: 'Invalid password. Please try again.' },
+    err: { type: 'error', text: 'An error occurred. Please try again.' }
+  };
+
+  if (loginStatus && typeof ToastNotification !== 'undefined' && loginMessages[loginStatus]) {
+    const msg = loginMessages[loginStatus];
+    ToastNotification[msg.type](msg.text);
+  }
+
+  if (registered === '1' && typeof ToastNotification !== 'undefined') {
+    ToastNotification.success('Your account was created. Please sign in.');
+  }
+
+  if (isLoggedIn) {
+    return;
+  }
+
+  const shouldOpenModal = showLogin === '1' || loginStatus === 'required' || loginStatus === 'missing' || loginStatus === 'notfound' || loginStatus === 'bad' || loginStatus === 'err';
+  if (shouldOpenModal) {
+    const accountEl = document.getElementById('accountModal');
+    if (accountEl && typeof bootstrap !== 'undefined') {
+      const modal = bootstrap.Modal.getOrCreateInstance(accountEl);
+      modal.show();
+    }
+  }
+});
+</script>

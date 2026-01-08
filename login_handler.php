@@ -11,6 +11,29 @@ function wants_json() {
     return $xhr || stripos($accept, 'application/json') !== false;
 }
 
+function normalize_redirect(string $raw = ''): string {
+    $raw = trim($raw);
+
+    if ($raw === '') {
+        return 'home.php';
+    }
+
+    // Prevent open redirects
+    if (preg_match('#^https?://#i', $raw)) {
+        return 'home.php';
+    }
+
+    if (!preg_match('/\.[a-z0-9]+($|\?)/i', $raw) && strpos($raw, '/') === false) {
+        $raw .= '.php';
+    }
+
+    if (strpos($raw, '?') === false && strpos($raw, '&') !== false) {
+        $raw = preg_replace('/&/', '?', $raw, 1);
+    }
+
+    return $raw;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /');
     exit;
@@ -100,9 +123,10 @@ try {
         exit;
     }
 
-// redirect back to login page to show notification, then to home
-    $redirect = $_POST['redirect_to'] ?? 'home.php';
-    header('Location: login.php?login=ok&redirect=' . urlencode($redirect));
+    // redirect back to the intended page and show a one-time success flag
+    $redirect = normalize_redirect($_POST['redirect_to'] ?? 'home.php');
+    $separator = (strpos($redirect, '?') === false) ? '?' : '&';
+    header('Location: ' . $redirect . $separator . 'login=ok');
     exit;
 
 } catch (Exception $e) {
