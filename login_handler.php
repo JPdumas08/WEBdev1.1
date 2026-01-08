@@ -100,9 +100,9 @@ try {
         exit;
     }
 
-    // redirect back (preserve referer)
-    $redirect = $_POST['redirect_to'] ?? $_SERVER['HTTP_REFERER'] ?? '/';
-    header('Location: ' . $redirect . '?login=ok');
+// redirect back to login page to show notification, then to home
+    $redirect = $_POST['redirect_to'] ?? 'home.php';
+    header('Location: login.php?login=ok&redirect=' . urlencode($redirect));
     exit;
 
 } catch (Exception $e) {

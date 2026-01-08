@@ -114,10 +114,18 @@ $(document).ready(function() {
     return false;
   });
 
-  // AJAX login: intercept login form if present
+  // AJAX login for modal form
   $(document).on('submit', '#loginForm', function(e) {
-    e.preventDefault();
+    // Check if this is the modal form (in header) vs the page form (in login.php)
     const $form = $(this);
+    const $modal = $form.closest('.modal');
+    
+    // Only intercept modal login form, let page form submit normally
+    if (!$modal.length) {
+      return true; // Allow normal form submission on login page
+    }
+    
+    e.preventDefault();
     const url = $form.attr('action') || 'login_handler.php';
     const data = $form.serialize();
 
@@ -132,20 +140,76 @@ $(document).ready(function() {
       timeout: 5000
     }).done(function(resp) {
       if (resp && resp.success) {
-        // Immediately reload page to refresh session
-        window.location.reload();
+        // Show success toast notification
+        const container = document.getElementById('customToastContainer') || 
+          (() => {
+            const c = document.createElement('div');
+            c.id = 'customToastContainer';
+            c.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(c);
+            return c;
+          })();
+        
+        const toast = document.createElement('div');
+        toast.innerHTML = `
+          <div class="alert-dismissible fade show text-white mb-3" role="alert" style="min-width: 350px; font-weight: 500; border-radius: 6px; background-color: #22c55e; border: none; padding: 1rem 1.25rem;">
+            Login successful! Welcome back.
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        container.appendChild(toast);
+        
+        // Close modal and reload after showing notification
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance($modal[0]);
+          if (modal) modal.hide();
+          window.location.reload();
+        }, 2000);
       } else {
         const msg = (resp && resp.error) ? resp.error : 'Login failed';
         // Clear previous errors
         $form.find('.alert-danger').remove();
-        // Show error
-        $form.prepend('<div class="alert alert-danger small mb-3">Error: ' + $('<div>').text(msg).html() + '</div>');
+        // Show error toast
+        const container = document.getElementById('customToastContainer') || 
+          (() => {
+            const c = document.createElement('div');
+            c.id = 'customToastContainer';
+            c.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(c);
+            return c;
+          })();
+        
+        const errorToast = document.createElement('div');
+        errorToast.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show text-white mb-3" role="alert" style="min-width: 350px; font-weight: 500;">
+            <strong>Error!</strong> ${msg}
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        container.appendChild(errorToast);
+        
         $form.find('button[type="submit"]').prop('disabled', false).text('Sign In');
       }
-    }).fail(function(xhr, status, error) {
-      $form.find('.alert-danger').remove();
-      $form.prepend('<div class="alert alert-danger small mb-3">Connection error. Please try again.</div>');
+    }).fail(function() {
       $form.find('button[type="submit"]').prop('disabled', false).text('Sign In');
+      
+      const container = document.getElementById('customToastContainer') || 
+        (() => {
+          const c = document.createElement('div');
+          c.id = 'customToastContainer';
+          c.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+          document.body.appendChild(c);
+          return c;
+        })();
+      
+      const errorToast = document.createElement('div');
+      errorToast.innerHTML = `
+        <div class="alert alert-danger alert-dismissible fade show text-white mb-3" role="alert" style="min-width: 350px; font-weight: 500;">
+          <strong>Error!</strong> Connection error. Please try again.
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+      container.appendChild(errorToast);
     });
   });
 });

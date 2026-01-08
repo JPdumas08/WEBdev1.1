@@ -245,22 +245,17 @@ $(document).ready(function() {
     
     // Update cart count in navbar if needed
     console.log('Added to cart:', name);
-    
-    // Show success message
+    // Local cart notification
     showCartNotification(name + ' added to cart!');
   };
-  
-  // Show cart notification
+
+  // Show cart notification (local alert)
   function showCartNotification(message) {
-    // Create notification element
-    const notification = $('<div class="alert alert-success alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999;">' +
+    const notification = $('<div class="alert alert-success alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999; border-radius: 6px;">' +
       '<i class="fas fa-check-circle me-2"></i>' + message +
       '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
       '</div>');
-    
     $('body').append(notification);
-    
-    // Auto remove after 3 seconds
     setTimeout(() => {
       notification.alert('close');
     }, 3000);
@@ -334,7 +329,9 @@ $(document).ready(function() {
             } catch (e) {
               console.error('Failed to sync cart with server response', e, resp);
             }
-            ToastNotification.success(name + ' added to cart!');
+            // Reset button state after success
+            btn.text('Add to Cart').removeClass('btn-secondary').addClass('btn-primary').prop('disabled', false);
+            showCartNotification(name + ' added to cart!');
           } else {
             const msg = resp && resp.message ? resp.message : 'Could not add to cart.';
             ToastNotification.error('Server error: ' + msg);

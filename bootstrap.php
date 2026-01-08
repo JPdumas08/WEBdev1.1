@@ -38,7 +38,7 @@ init_session();
           <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
           <li class="nav-item"><a class="nav-link" href="contactus.php">Contact</a></li>
           <li class="nav-item"><a class="nav-link" href="cart.php">🛒 Cart</a></li>
-          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal">👤 Account</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal"><img src="image/user.svg" alt="Account" class="me-2" style="height:1.25em; width:1.25em; vertical-align:middle;">Account</a></li>
         </ul>
       </div>
     </div>
@@ -147,7 +147,7 @@ init_session();
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="accountModalLabel">👤 Account</h5>
+          <h5 class="modal-title" id="accountModalLabel"><img src="image/user.svg" alt="Account" class="me-2" style="height:1.25em; width:1.25em; vertical-align:middle;">Account</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">

@@ -22,7 +22,7 @@ $user = current_user();
         <?php if (!empty($user)): ?>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              👤 <?= htmlspecialchars($user['first_name'] ?? $user['username'] ?? 'Account') ?></a>
+              <img src="image/user.svg" alt="Account" class="me-2" style="height:1.25em; width:1.25em; vertical-align:middle;"><?= htmlspecialchars($user['first_name'] ?? $user['username'] ?? 'Account') ?></a>
 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
               <li><a class="dropdown-item" href="account_settings.php">Account Settings</a></li>
               <li><a class="dropdown-item" href="notifications.php">Notifications</a></li>
@@ -32,7 +32,7 @@ $user = current_user();
             </ul>
           </li>
         <?php else: ?>
-          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal">👤 Account</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#accountModal"><img src="image/user.svg" alt="Account" class="me-2" style="height:1.25em; width:1.25em; vertical-align:middle;">Account</a></li>
         <?php endif; ?>
       </ul>
     </div>

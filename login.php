@@ -1,4 +1,20 @@
 <?php
+require_once __DIR__ . '/init_session.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/includes/auth.php';
+init_session();
+
+// Handle redirect after successful login
+if (isset($_GET['login']) && $_GET['login'] == 'ok' && isset($_GET['redirect']) && !empty($_SESSION['user'])) {
+    $redirect_url = $_GET['redirect'];
+    // Show notification briefly then redirect
+    echo '<script>
+        setTimeout(function() {
+            window.location.href = "' . htmlspecialchars($redirect_url) . '";
+        }, 2000);
+    </script>';
+}
+
 $pageTitle = 'Jeweluxe - Login';
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -17,10 +33,29 @@ require_once __DIR__ . '/includes/header.php';
       <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
           <div class="contact-form-card">
-            <h3 class="text-center mb-4">👤 Account Login</h3>
+<h3 class="text-center mb-4"><img src="image/user.svg" alt="Account" class="me-2" style="height:1.25em; width:1.25em; vertical-align:middle;">Account Login</h3>
             <?php if (isset($_GET['registered']) && $_GET['registered'] == '1'): ?>
               <div class="alert alert-success text-center">Your account was created. Please sign in.</div>
             <?php endif; ?>
+            <?php if (isset($_GET['login'])): ?>
+              <?php if ($_GET['login'] == 'ok'): ?>
+                <div class="alert alert-success text-center">Login successful! Welcome back.</div>
+              <?php elseif ($_GET['login'] == 'missing'): ?>
+                <div class="alert alert-danger text-center">Please fill in all required fields.</div>
+              <?php elseif ($_GET['login'] == 'notfound'): ?>
+                <div class="alert alert-danger text-center">User not found. Please check your credentials.</div>
+              <?php elseif ($_GET['login'] == 'bad'): ?>
+                <div class="alert alert-danger text-center">Invalid password. Please try again.</div>
+              <?php elseif ($_GET['login'] == 'err'): ?>
+                <div class="alert alert-danger text-center">An error occurred. Please try again.</div>
+              <?php endif; ?>
+            <?php endif; ?>
+            <?php
+            // Check if user just logged in (session has user but no login parameter)
+            if (isset($_SESSION['user']) && !isset($_GET['login']) && basename($_SERVER['HTTP_REFERER'] ?? '') != 'login.php') {
+                echo '<div class="alert alert-success text-center">Login successful! Welcome back, ' . htmlspecialchars($_SESSION['user']['first_name'] ?? $_SESSION['user']['username'] ?? 'User') . '.</div>';
+            }
+            ?>
             <form id="loginForm" method="post" action="login_handler.php">
               <input type="hidden" name="redirect_to" value="home.php">
               <div class="mb-3">
@@ -60,10 +95,6 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </section>
 
-require_once __DIR__ . '/init_session.php';
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/includes/auth.php';
-init_session();
 ?>
 <script>
 $(document).ready(function() {
@@ -76,6 +107,34 @@ $(document).ready(function() {
   $('input[required]').on('invalid', function(e) {
     e.preventDefault();
   });
+  
+  // Function to show notification
+  function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const notification = $('<div class="alert ' + alertClass + ' text-center mb-3">' + message + '</div>');
+    $('.contact-form-card h3').after(notification);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(function() {
+      notification.fadeOut(500, function() {
+        $(this).remove();
+      });
+    }, 5000);
+  }
+  
+  // Check for URL parameters and show notifications
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('login') === 'ok') {
+    showNotification('Login successful! Welcome back.', 'success');
+  } else if (urlParams.get('login') === 'missing') {
+    showNotification('Please fill in all required fields.', 'danger');
+  } else if (urlParams.get('login') === 'notfound') {
+    showNotification('User not found. Please check your credentials.', 'danger');
+  } else if (urlParams.get('login') === 'bad') {
+    showNotification('Invalid password. Please try again.', 'danger');
+  } else if (urlParams.get('login') === 'err') {
+    showNotification('An error occurred. Please try again.', 'danger');
+  }
   
   // The login form submits to server-side handler; client-side validation only
   $('#loginForm').on('submit', function(e) {
