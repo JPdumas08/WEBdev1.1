@@ -147,3 +147,15 @@
 [2026-01-08 14:04:47] Request: POST /session/add_to_cart.php POST:{"product_id":"7","quantity":"1"}
 [2026-01-08 16:09:05] Request: POST /session/add_to_cart.php POST:{"product_id":"8","quantity":"1"}
 [2026-01-08 16:31:05] Request: POST /session/add_to_cart.php POST:{"product_id":"7","quantity":"1"}
+[2026-01-08 16:39:27] Request: POST /session/add_to_cart.php POST:{"product_id":"8","quantity":"1"}
+[2026-01-08 16:39:37] Request: POST /session/add_to_cart.php POST:{"product_id":"7","quantity":"1"}
+[2026-01-09 04:20:34] Request: POST /session/add_to_cart.php POST:{"product_id":"5","quantity":"1"}
+[2026-01-09 04:21:28] Request: POST /session/add_to_cart.php POST:{"product_id":"8","quantity":"1"}
+[2026-01-09 04:27:32] Request: POST /session/add_to_cart.php POST:{"product_id":"5","quantity":"1"}
+[2026-01-09 04:31:22] Request: POST /session/add_to_cart.php POST:{"product_id":"4","quantity":"1"}
+[2026-01-09 04:32:09] Request: POST /session/add_to_cart.php POST:{"product_id":"7","quantity":"1"}
+[2026-01-09 04:32:10] Request: POST /session/add_to_cart.php POST:{"product_id":"8","quantity":"1"}
+[2026-01-09 04:32:13] Request: POST /session/add_to_cart.php POST:{"product_id":"4","quantity":"1"}
+[2026-01-09 04:32:13] Request: POST /session/add_to_cart.php POST:{"product_id":"4","quantity":"1"}
+[2026-01-09 04:32:13] Request: POST /session/add_to_cart.php POST:{"product_id":"4","quantity":"1"}
+[2026-01-09 04:32:14] Request: POST /session/add_to_cart.php POST:{"product_id":"4","quantity":"1"}

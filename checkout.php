@@ -22,6 +22,13 @@ $addr_stmt = $pdo->prepare($addresses_sql);
 $addr_stmt->execute([':uid' => $user_id]);
 $addresses = $addr_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Redirect to address page if no saved addresses
+if (empty($addresses)) {
+    $_SESSION['checkout_redirect_message'] = 'Please add a shipping address before checking out.';
+    header('Location: address.php');
+    exit();
+}
+
 // Get default address
 $default_address = null;
 foreach ($addresses as $addr) {
@@ -29,6 +36,11 @@ foreach ($addresses as $addr) {
         $default_address = $addr;
         break;
     }
+}
+
+// If no default, use the first address
+if (!$default_address && !empty($addresses)) {
+    $default_address = $addresses[0];
 }
 
 // Get cart items (PDO)
@@ -80,15 +92,25 @@ $total = $subtotal + $shipping;
                         <h5 class="mb-0">Shipping Information</h5>
                     </div>
                     <div class="card-body">
-                        <?php if (!empty($addresses)): ?>
+                        <form id="checkoutForm" method="POST" action="process_checkout.php" onsubmit="return false;">
+                            <input type="hidden" name="checkout_form" value="1">
+                            <input type="hidden" id="addressId" name="addressId" value="<?php echo $default_address ? $default_address['address_id'] : ''; ?>">
+                            
                             <div class="mb-4">
-                                <h6 class="mb-3">Select Saved Address</h6>
+                                <h6 class="mb-3">Select Shipping Address</h6>
                                 <div class="row g-3" id="savedAddresses">
                                     <?php foreach ($addresses as $addr): ?>
                                         <div class="col-md-6">
                                             <div class="card border cursor-pointer address-option" 
                                                  data-address-id="<?php echo $addr['address_id']; ?>"
-                                                 style="cursor: pointer; transition: all 0.3s; <?php echo $addr['is_default'] ? 'border: 2px solid #0d6efd !important;' : ''; ?>">
+                                                 data-full-name="<?php echo htmlspecialchars($addr['full_name']); ?>"
+                                                 data-phone="<?php echo htmlspecialchars($addr['phone']); ?>"
+                                                 data-address-line1="<?php echo htmlspecialchars($addr['address_line1']); ?>"
+                                                 data-address-line2="<?php echo htmlspecialchars($addr['address_line2']); ?>"
+                                                 data-city="<?php echo htmlspecialchars($addr['city']); ?>"
+                                                 data-state="<?php echo htmlspecialchars($addr['state']); ?>"
+                                                 data-postal-code="<?php echo htmlspecialchars($addr['postal_code']); ?>"
+                                                 style="cursor: pointer; transition: all 0.3s; <?php echo ($addr['is_default'] || ($default_address && $addr['address_id'] == $default_address['address_id'])) ? 'border: 2px solid #0d6efd !important;' : ''; ?>">
                                                 <div class="card-body">
                                                     <?php if ($addr['is_default']): ?>
                                                         <span class="badge bg-primary mb-2">Default</span>
@@ -103,72 +125,15 @@ $total = $subtotal + $shipping;
                                     <?php endforeach; ?>
                                 </div>
                                 <div class="mt-3">
-                                    <a href="address.php" class="btn btn-outline-secondary btn-sm">Manage Addresses</a>
+                                    <a href="address.php" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-plus"></i> Manage Addresses
+                                    </a>
                                 </div>
-                            </div>
-                            <hr>
-                        <?php else: ?>
-                            <div class="alert alert-warning mb-4">
-                                <strong>⚠️ No Saved Address</strong><br>
-                                You haven't added a shipping address yet. Please fill in the details below or <a href="address.php" class="alert-link">add a saved address</a>.
-                            </div>
-                        <?php endif; ?>
-
-                        <form id="checkoutForm" method="POST" action="process_checkout.php" onsubmit="return false;">
-                            <input type="hidden" name="checkout_form" value="1">
-                            <input type="hidden" id="addressId" name="addressId" value="<?php echo $default_address ? $default_address['address_id'] : ''; ?>">
-                            
-                            <h6 class="mb-3">Shipping Details</h6>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="firstName" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="lastName" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" required>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email_address'] ?? ''); ?>" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($default_address['phone'] ?? ''); ?>" placeholder="09xx-xxx-xxxx" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Street Address</label>
-                                <input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($default_address['address_line1'] ?? ''); ?>" placeholder="e.g., 123 Main Street" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="address2" class="form-label">Apartment, Suite, etc. (Optional)</label>
-                                <input type="text" class="form-control" id="address2" name="address2" value="<?php echo htmlspecialchars($default_address['address_line2'] ?? ''); ?>">
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="city" class="form-label">City</label>
-                                    <input type="text" class="form-control" id="city" name="city" value="<?php echo htmlspecialchars($default_address['city'] ?? ''); ?>" placeholder="e.g., Manila" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="province" class="form-label">Province/State</label>
-                                    <input type="text" class="form-control" id="province" name="province" value="<?php echo htmlspecialchars($default_address['state'] ?? 'Metro Manila'); ?>" required>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="postalCode" class="form-label">Postal Code</label>
-                                <input type="text" class="form-control" id="postalCode" name="postalCode" value="<?php echo htmlspecialchars($default_address['postal_code'] ?? ''); ?>" placeholder="e.g., 1000" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="orderNotes" class="form-label">Order Notes (Optional)</label>
-                                <textarea class="form-control" id="orderNotes" name="orderNotes" rows="3"></textarea>
+                                <textarea class="form-control" id="orderNotes" name="orderNotes" rows="3" placeholder="Special instructions for your order..."></textarea>
                             </div>
                         </form>
                     </div>
@@ -309,24 +274,12 @@ $total = $subtotal + $shipping;
             e.preventDefault();
             e.stopPropagation();
             
-            // Validate required fields exist and are not empty
-            const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'province', 'postalCode'];
-            let hasErrors = false;
-            
-            for (let field of requiredFields) {
-                const element = document.getElementById(field);
-                if (!element || !element.value.trim()) {
-                    hasErrors = true;
-                    ToastNotification.error(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
-                    break;
-                }
+            // Check if address is selected
+            const addressId = document.getElementById('addressId').value;
+            if (!addressId) {
+                ToastNotification.error('Please select a shipping address.');
+                return false;
             }
-            
-            if (hasErrors) return false;
-            
-            
-            // Prevent default form submission
-            e.preventDefault();
             
             // Get form data
             const formData = new FormData(this);
@@ -397,38 +350,14 @@ $total = $subtotal + $shipping;
                 this.style.borderColor = '#0d6efd';
                 this.style.borderWidth = '2px';
                 
-                // Get address data from clicked card
+                // Update the hidden addressId input
                 const addressId = this.dataset.addressId;
-                const fullName = this.querySelector('.card-title').textContent.trim();
-                const phone = this.querySelector('small').textContent.trim();
-                const addressText = Array.from(this.querySelectorAll('small')).slice(1).map(el => el.textContent.trim()).join(', ');
-                
-                // Parse address components
-                const addressParts = addressText.split(',').map(p => p.trim());
-                let addressLine1 = addressParts[0] || '';
-                let addressLine2 = addressParts[1] || '';
-                let cityState = addressParts[2] || '';
-                let postalCode = addressParts[3] || '';
-                
-                const nameParts = fullName.split(' ');
-                const firstName = nameParts[0];
-                const lastName = nameParts.slice(1).join(' ');
-                
-                // Update form fields
                 document.getElementById('addressId').value = addressId;
-                document.getElementById('firstName').value = firstName;
-                document.getElementById('lastName').value = lastName;
-                document.getElementById('phone').value = phone;
-                document.getElementById('address').value = addressLine1;
-                document.getElementById('address2').value = addressLine2;
-                document.getElementById('city').value = cityState.split(/\s+/)[0];
-                document.getElementById('province').value = cityState;
-                document.getElementById('postalCode').value = postalCode;
             });
         });
 
-        // Set initial active state on page load
-        const defaultAddress = document.querySelector('[data-address-id]');
+        // Set initial active state on page load (select default or first address)
+        const defaultAddress = document.querySelector('.address-option');
         if (defaultAddress) {
             defaultAddress.click();
         }

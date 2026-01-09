@@ -23,30 +23,30 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Get and validate form data
-$required_fields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'province', 'postalCode', 'paymentMethod'];
-foreach ($required_fields as $field) {
-    if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
-        echo json_encode(['success' => false, 'message' => "Field '$field' is required. Please fill in all fields and try again."]);
-        exit();
-    }
+// Check if addressId is provided (required for saved address checkout)
+if (!isset($_POST['addressId']) || empty($_POST['addressId'])) {
+    echo json_encode(['success' => false, 'message' => 'Please select a shipping address.']);
+    exit();
 }
 
-// Sanitize input data
-$firstName = trim($_POST['firstName']);
-$lastName = trim($_POST['lastName']);
-$email = trim($_POST['email']);
-$phone = trim($_POST['phone']);
-$address = trim($_POST['address']);
-$city = trim($_POST['city']);
-$province = trim($_POST['province']);
-$postalCode = trim($_POST['postalCode']);
-$paymentMethod = trim($_POST['paymentMethod']);
+$address_id = (int)$_POST['addressId'];
+$paymentMethod = isset($_POST['paymentMethod']) ? trim($_POST['paymentMethod']) : '';
 $orderNotes = isset($_POST['orderNotes']) ? trim($_POST['orderNotes']) : '';
 
-// Validate email
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
+// Validate payment method
+if (empty($paymentMethod)) {
+    echo json_encode(['success' => false, 'message' => 'Please select a payment method.']);
+    exit();
+}
+
+// Fetch the selected address
+$address_sql = "SELECT * FROM addresses WHERE address_id = :aid AND user_id = :uid";
+$address_stmt = $pdo->prepare($address_sql);
+$address_stmt->execute([':aid' => $address_id, ':uid' => $user_id]);
+$address = $address_stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$address) {
+    echo json_encode(['success' => false, 'message' => 'Invalid address selected. Please select a valid shipping address.']);
     exit();
 }
 
@@ -77,16 +77,15 @@ foreach ($cart_items as $item) {
 }
 $total = $subtotal + $shipping + $tax;
 
-// Build shipping and billing address strings
+// Build shipping address string from saved address
 $shipping_address = sprintf(
-    "%s %s\n%s\n%s, %s %s\n%s",
-    $firstName,
-    $lastName,
-    $address,
-    $city,
-    $province,
-    $postalCode,
-    $phone
+    "%s\n%s\n%s, %s %s\n%s",
+    $address['full_name'],
+    $address['address_line1'] . ($address['address_line2'] ? ', ' . $address['address_line2'] : ''),
+    $address['city'],
+    $address['state'],
+    $address['postal_code'],
+    $address['phone']
 );
 
 // Begin transaction

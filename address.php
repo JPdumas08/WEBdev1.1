@@ -12,6 +12,12 @@ $user_id = (int) $_SESSION['user_id'];
 $success_message = '';
 $error_message = '';
 
+// Check for redirect message from checkout
+if (isset($_SESSION['checkout_redirect_message'])) {
+    $error_message = $_SESSION['checkout_redirect_message'];
+    unset($_SESSION['checkout_redirect_message']);
+}
+
 // Handle add address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_address'])) {
     $full_name = trim($_POST['full_name'] ?? '');
